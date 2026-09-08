@@ -5,7 +5,7 @@ io.on("connection", function (socket) {
   socket.data.playerId = null; socket.data.roomCode = null;
   socket.on("create", function (d) {
     d = d || {};
-    const n = Math.max(2, Math.min(10, parseInt(d.maxPlayers, 10) || 2));
+    const n = Math.max(2, Math.min(8, parseInt(d.maxPlayers, 10) || 2));
     const code = codeGen(); const playerId = uid(); const token = uid();
     const room = {
       code: code, hostId: playerId, maxPlayers: n, status: "lobby", game: null,
@@ -182,7 +182,7 @@ io.on("connection", function (socket) {
     if (g.drawQueue && g.drawQueue.length) {
       const q = g.drawQueue[0];
       if (q.playerId !== pid) return socket.emit("errorMsg", "Ceza sirasi sende degil.");
-      drawCards(g, pid, 1); q.left -= 1;
+      drawCards(g, pid, 1); q.left -= 1; io.to(room.code).emit("cardDraw", { toId: pid });
       g.lastAction = nameOf(room, pid) + " ceza cekti. Kalan " + q.left;
       if (q.left <= 0) g.drawQueue.shift();
       if (!g.drawQueue.length) {
@@ -195,7 +195,7 @@ io.on("connection", function (socket) {
     }
     if (g.currentId !== pid) return socket.emit("errorMsg", "Sira sende degil.");
     if (g.plusStack && g.plusStack > 0) {
-      drawCards(g, pid, 1); g.plusStack -= 1;
+      drawCards(g, pid, 1); g.plusStack -= 1; io.to(room.code).emit("cardDraw", { toId: pid });
       g.lastAction = nameOf(room, pid) + " ceza cekti. Kalan " + g.plusStack;
       if (g.plusStack <= 0) {
         g.plusStack = 0; g.stackKind = null; g.currentId = pid;
@@ -207,6 +207,7 @@ io.on("connection", function (socket) {
     }
     const top = g.discard[g.discard.length - 1];
     const taken = drawCards(g, pid, 1);
+    io.to(room.code).emit("cardDraw", { toId: pid });
     const drawn = taken[0];
     if (drawn && canPlay(drawn, top, g.chosenColor, null)) {
       g.pendingDrawn = { playerId: pid, card: drawn };
