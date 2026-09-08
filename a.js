@@ -8,7 +8,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.static(path.join(__dirname, "public")));
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V6";
+const VERSION = "V7";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
@@ -70,7 +70,6 @@ function codeGen() {
   const code = String(1000 + Math.floor(Math.random() * 9000));
   return rooms.has(code) ? codeGen() : code;
 }
-function anyoneOffline(room) { return room.players.some(function (p) { return !p.connected; }); }
 function nameOf(room, id) {
   const p = room.players.find(function (x) { return x.id === id; });
   return p ? p.name : "Oyuncu";
@@ -88,9 +87,10 @@ function publicRoom(room, viewerId) {
   const g = room.game;
   let actor = g ? g.currentId : null;
   if (g && g.drawQueue && g.drawQueue.length) actor = g.drawQueue[0].playerId;
+  const actorP = actor && room.players.find(function (x) { return x.id === actor; });
   return {
     version: VERSION, code: room.code, maxPlayers: room.maxPlayers, hostId: room.hostId, status: room.status,
-    paused: !!(g && anyoneOffline(room) && room.status === "playing"),
+    paused: !!(g && room.status === "playing" && actorP && !actorP.connected),
     seats: room.seats || room.players.map(function (p) { return p.id; }),
     roundsTotal: room.roundsTotal || 1, roundNow: room.roundNow || 1,
     scores: room.scores || {}, lastRoundPts: room.lastRoundPts || {},
@@ -109,8 +109,10 @@ function publicRoom(room, viewerId) {
       currentId: actor, actorId: actor, winnerId: g.winnerId, lastAction: g.lastAction,
       notice: g.notice || "", noticeYou: g.noticeYou && g.noticeYou[viewerId] ? g.noticeYou[viewerId] : "",
       hand: g.hands[viewerId] || [], deckCount: g.deck.length,
-      plusStack: g.plusStack || 0, stackKind: g.stackKind || null,
-      drawQueue: g.drawQueue || []
+      plusStack: g.plusStack || 0,
+      stackKind: (g.plusStack > 0 || (g.drawQueue && g.drawQueue.length)) ? g.stackKind : null,
+      drawQueue: g.drawQueue || [],
+      canPass: !!(g.pendingDrawn && g.pendingDrawn.playerId === viewerId)
     } : null
   };
 }
