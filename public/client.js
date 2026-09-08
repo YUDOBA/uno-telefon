@@ -8,7 +8,7 @@ socket.on("connect", function () {
 setInterval(function () { try { fetch("/health"); socket.emit("ping"); } catch (e) {} }, 180000);
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V13";
+const VERSION = "V14";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
 let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false, picked = null, flying = null, iSaidUno = false;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); if (d.code) localStorage.setItem("uno_code", d.code); screen = "lobby"; err = ""; render(); });
@@ -27,9 +27,10 @@ function esc(s) {
 function canPlay(card, top, chosenColor, stackKind) {
   if (!card) return false; if (!top) return true;
   if (stackKind === "draw2") return card.type === "draw2";
-  if (stackKind === "wild4" || stackKind === "custom") return false;
-  if (card.type === "wild" || card.type === "custom") return true;
+  if (stackKind === "wild4" || stackKind === "custom" || stackKind === "wdraw2") return false;
+  if (card.type === "wild" || card.type === "custom" || card.type === "wdraw2" || card.type === "wtarget2" || card.type === "wskip2" || card.type === "swap" || card.type === "shuffle" || card.type === "skipall") return true;
   if (card.type === "wild4") return top.type === "number" || top.type === "wild" || top.type === "wild4" || top.type === "custom";
+  if (card.type === "flip" && top && top.type === "flip") return true;
   var color = top.color === "black" ? chosenColor : top.color;
   if (card.color === color) return true;
   if (card.type === "number" && top.type === "number" && card.value === top.value) return true;
@@ -46,6 +47,13 @@ function cardHtml(c, extra, idx) {
   else if (c.type === "wild") { mid = "<div class=\"oval\"><div class=\"wheel\"><i></i><i></i><i></i><i></i></div></div>"; }
   else if (c.type === "wild4") { cor = corner("+4"); mid = "<div class=\"oval\"><div class=\"wheel\"><i></i><i></i><i></i><i></i></div></div>"; }
   else if (c.type === "custom") { cor = corner("8"); mid = "<div class=\"oval\"><div class=\"plus\">8</div></div>"; }
+  else if (c.type === "wdraw2") { cor = corner("+2"); mid = "<div class=\"oval\"><div class=\"plus\">+2</div></div>"; }
+  else if (c.type === "wtarget2") { cor = corner("+2"); mid = "<div class=\"oval\"><div class=\"plus\">@2</div></div>"; }
+  else if (c.type === "wskip2") { cor = corner("XX"); mid = "<div class=\"oval\"><div class=\"plus\">XX</div></div>"; }
+  else if (c.type === "swap") { cor = corner("SW"); mid = "<div class=\"oval\"><div class=\"plus\">SW</div></div>"; }
+  else if (c.type === "shuffle") { cor = corner("SH"); mid = "<div class=\"oval\"><div class=\"plus\">SH</div></div>"; }
+  else if (c.type === "flip") { cor = corner("F"); mid = "<div class=\"oval\"><div class=\"rev mark\">F</div></div>"; }
+  else if (c.type === "skipall") { cor = corner("ALL"); mid = "<div class=\"oval\"><div class=\"plus\">ALL</div></div>"; }
   return "<div class=\"ucard sm " + c.color + " " + extra + "\"" + click + ">" + cor + mid + "</div>";
 }
 function backs(n) { var h = "", s = Math.min(n, 8); for (var i = 0; i < s; i++) h += "<div class=\"back\"></div>"; return h; }
@@ -222,7 +230,8 @@ function game() {
     html += "<button style=\"background:var(--green)\" onclick=\"confirmWild('green')\">Yesil</button>";
     html += "<button style=\"background:var(--blue)\" onclick=\"confirmWild('blue')\">Mavi</button></div></div>";
   }
-  if (pendingCustom) html += assignPanel();
+  if (pendingCustom && pendingCustom.kind) html += targetPanel();
+  else if (pendingCustom) html += assignPanel();
   if ((drawnChoice || g.canPass) && myTurn && !g.plusStack && !(g.drawQueue && g.drawQueue.length)) {
     html += "<div class=\"panel warn\">Cektigin karti oynayabilirsin veya Pas.</div>";
   }
@@ -252,7 +261,8 @@ function tryPlay(i) {
   var card = state.game.hand[i]; if (!card) return;
   if (!isActor()) { err = "Sira sende degil."; render(); return; }
   if (card.type === "custom") { pendingCustom = { i: i, color: null }; pendingWild = i; picked = null; render(); return; }
-  if (card.type === "wild" || card.type === "wild4") { pendingWild = i; picked = null; render(); return; }
+  if (card.type === "wild" || card.type === "wild4" || card.type === "wdraw2" || card.type === "wskip2" || card.type === "shuffle" || card.type === "skipall") { pendingWild = i; picked = null; render(); return; }
+  if (card.type === "wtarget2" || card.type === "swap") { pendingCustom = { i: i, color: null, kind: card.type }; pendingWild = i; picked = null; render(); return; }
   if (!canPlay(card, state.game.top, state.game.chosenColor, state.game.stackKind)) {
     err = "Bu kart oynanamaz."; render(); return;
   }
@@ -268,6 +278,28 @@ function chgAs(id, d) {
   var v = (assignMap[id] || 0) + d; if (v < 0) v = 0;
   var sum = 0; Object.keys(assignMap).forEach(function (k) { if (k !== id) sum += assignMap[k] || 0; });
   if (sum + v > 8) v = 8 - sum; assignMap[id] = v; render();
+}
+function targetPanel() {
+  var others = state.players.filter(function (p) { return p.id !== me.playerId; });
+  var col = pendingCustom && pendingCustom.color;
+  var h = "<div class=\"panel\"><p>" + (pendingCustom.kind === "swap" ? "El degisecegin oyuncu" : "Hedef +2 oyuncu") + "</p>";
+  h += "<div class=\"colors\">";
+  h += "<button style=\"background:var(--red)\" onclick=\"confirmWild('red')\">Kirmizi</button>";
+  h += "<button style=\"background:var(--yellow);color:#222\" onclick=\"confirmWild('yellow')\">Sari</button>";
+  h += "<button style=\"background:var(--green)\" onclick=\"confirmWild('green')\">Yesil</button>";
+  h += "<button style=\"background:var(--blue)\" onclick=\"confirmWild('blue')\">Mavi</button></div>";
+  if (col) h += "<p>Renk: " + (COLOR_TR[col]||col) + "</p>";
+  others.forEach(function (p) {
+    var on = pendingCustom.target === p.id;
+    h += "<button class=\"btn " + (on ? "btn-main" : "btn-ghost") + "\" onclick=\"pendingCustom.target='" + p.id + "';render()\">" + esc(p.name) + "</button>";
+  });
+  h += "<button class=\"btn btn-main\" " + (col && pendingCustom.target ? "" : "disabled") + " onclick=\"confirmTarget()\">Tamam</button>";
+  h += "<button class=\"btn btn-ghost\" onclick=\"pendingCustom=null;pendingWild=null;render()\">Vazgec</button></div>";
+  return h;
+}
+function confirmTarget() {
+  socket.emit("play", { cardIndex: pendingCustom.i, chosenColor: pendingCustom.color, targetId: pendingCustom.target });
+  pendingCustom = null; pendingWild = null;
 }
 function confirmCustom() {
   var assign = []; Object.keys(assignMap).forEach(function (k) { if (assignMap[k]) assign.push({ playerId: k, n: assignMap[k] }); });
@@ -317,6 +349,13 @@ function cardsHelp() {
   html += row({color:"black",type:"wild",value:"wild"}, "Joker (Wild)", "Her zaman atilir. Atan yeni rengi secer.");
   html += row({color:"black",type:"wild4",value:"wild4"}, "Joker +4 (Wild Draw Four)", "Ustte sayi karti veya joker varken atilir. Atla / Ters / +2 ustune atilmaz. Siradaki 4 kart ceker, sonra kart atabilir.");
   html += row({color:"black",type:"custom",value:"custom"}, "Ozel Joker 8", "Her zaman atilir. Atmadan once toplam 8 cezayi oyunculara dagitirsin. Secilenler sirayla ceker, son ceken kart atabilir.");
+  html += row({color:"black",type:"wdraw2",value:"wdraw2"}, "Joker +2", "Her zaman atilir. Renk secilir. Siradaki 2 kart ceker, sonra atabilir.");
+  html += row({color:"black",type:"wtarget2",value:"wtarget2"}, "Hedef +2", "Her zaman atilir. Renk ve hedef secilir. Hedef 2 kart ceker.");
+  html += row({color:"black",type:"wskip2",value:"wskip2"}, "Cift Atla", "Her zaman atilir. Renk secilir. Sonraki 2 oyuncu atlanir.");
+  html += row({color:"black",type:"swap",value:"swap"}, "El Degis", "Her zaman atilir. Secilen oyuncu ile eller degisir.");
+  html += row({color:"black",type:"shuffle",value:"shuffle"}, "El Karistir", "Her zaman atilir. Butun eller toplanir, karistirilir, ayni sayida dagitilir.");
+  html += row({color:"green",type:"flip",value:"flip"}, "Cevir (Flip)", "Ayni renk veya baska Cevir ustune atilir. Yon doner.");
+  html += row({color:"black",type:"skipall",value:"skipall"}, "Herkesi Atla", "Her zaman atilir. Renk secilir. Diger herkes atlanir, ayni oyuncu tekrar oynar.");
   html += "<button class=\"btn btn-main\" onclick=\"backFromCards()\">Geri</button>" + ver();
   app.innerHTML = html;
 }
@@ -339,6 +378,14 @@ function countsHelp() {
   html += "<div class=\"row\"><span>Joker</span><span>4</span></div>";
   html += "<div class=\"row\"><span>Joker +4</span><span>4</span></div>";
   html += "<div class=\"row\"><span>Ozel Joker 8</span><span>4</span></div>";
+  html += "<div class=\"row\"><span>Joker +2</span><span>4</span></div>";
+  html += "<div class=\"row\"><span>Hedef +2</span><span>4</span></div>";
+  html += "<div class=\"row\"><span>Cift Atla</span><span>4</span></div>";
+  html += "<div class=\"row\"><span>El Degis</span><span>4</span></div>";
+  html += "<div class=\"row\"><span>El Karistir</span><span>4</span></div>";
+  html += "<div class=\"row\"><span>Cevir (her renkten 1)</span><span>4</span></div>";
+  html += "<div class=\"row\"><span>Herkesi Atla</span><span>4</span></div>";
+  html += "<p>Yeni toplam deste: <b>140</b></p>";
   html += "</div><button class=\"btn btn-main\" onclick=\"goHome()\">Geri</button>" + ver();
   app.innerHTML = html;
 }
@@ -347,7 +394,7 @@ function rulesHelp() {
   html += "<div class=\"panel\"><b>1. Amac</b><p class=\"sub\">Elini ilk bitiren turi kazanir. Belirlenen tur sonunda en dusuk toplam puan oyunu kazanir.</p></div>";
   html += "<div class=\"panel\"><b>2. Kurulum</b><p class=\"sub\">2-8 oyuncu. Herkese 7 kart. Ortaya yalniz sayi karti acilir. Ilk yon saat yonudur.</p></div>";
   html += "<div class=\"panel\"><b>3. Sira</b><p class=\"sub\">Ustteki kartla ayni renk veya ayni sayi/tur kart atilir. Atacak kart yoksa veya istenirse kart cekilir. Cekilen oynanabilirse atilir veya Pas.</p></div>";
-  html += "<div class=\"panel\"><b>4. Kartlar</b><p class=\"sub\">Atla: sonraki oyuncu atlanir.<br>Ters: yon doner (2 kiside Atla gibi).<br>+2: sonraki 2 ceker veya +2 yiginlar. Son +2 renginden devam.<br>Joker: her zaman, renk secilir.<br>Joker +4: sayi veya joker ustune, sonraki 4 ceker sonra atabilir.<br>Ozel 8: renk + tam 8 ceza dagitimi. Secilenler sirayla ceker.</p></div>";
+  html += "<div class=\"panel\"><b>4. Kartlar</b><p class=\"sub\">Atla: sonraki oyuncu atlanir.<br>Ters: yon doner (2 kiside Atla gibi).<br>+2: sonraki 2 ceker veya +2 yiginlar. Son +2 renginden devam.<br>Joker: her zaman, renk secilir.<br>Joker +4: sayi veya joker ustune, sonraki 4 ceker sonra atabilir.<br>Ozel 8: renk + tam 8 ceza dagitimi. Secilenler sirayla ceker.<br>Joker +2: siradaki 2 ceker.<br>Hedef +2: sectigin kisi 2 ceker.<br>Cift Atla: sonraki 2 kisi atlanir.<br>El Degis / El Karistir.<br>Cevir: yon doner.<br>Herkesi Atla: sen tekrar oynarsin.</p></div>";
   html += "<div class=\"panel\"><b>5. UNO</b><p class=\"sub\">2 kart kalinca UNO denir. Denmezse 2 ceza karti.</p></div>";
   html += "<div class=\"panel\"><b>6. Puan</b><p class=\"sub\">Sayi karti yuzu kadar, ozel kart 10. Turu bitiren -10. En dusuk toplam kazanir.</p></div>";
   html += "<button class=\"btn btn-main\" onclick=\"goHome()\">Geri</button>" + ver();
