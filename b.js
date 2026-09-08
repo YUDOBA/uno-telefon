@@ -231,8 +231,10 @@ io.on("connection", function (socket) {
     const room = rooms.get(socket.data.roomCode);
     if (!room || !room.game) return;
     const pid = socket.data.playerId;
-    if (room.game.hands[pid] && room.game.hands[pid].length <= 2) {
-      room.game.saidUno[pid] = true; room.game.lastAction = nameOf(room, pid) + ": UNO!"; emitRoom(room);
+    if (room.game.hands[pid] && room.game.hands[pid].length === 2) {
+      room.game.saidUno[pid] = true; room.game.lastAction = nameOf(room, pid) + ": UNO!";
+      io.to(room.code).emit("unoShout");
+      emitRoom(room);
     }
   });
   socket.on("again", function () {
