@@ -99,8 +99,10 @@ io.on("connection", function (socket) {
     const hand = g.hands[pid]; const card = hand[d.cardIndex]; if (!card) return;
     const top = g.discard[g.discard.length - 1];
     if (!canPlay(card, top, g.chosenColor, g.plusStack > 0 ? g.stackKind : null)) return socket.emit("errorMsg", "Bu kart oynanamaz.");
-    if ((card.type === "wild" || card.type === "wild4" || card.type === "custom") && COLORS.indexOf(d.chosenColor) < 0)
-      return socket.emit("errorMsg", "Renk sec.");
+    const needColor = { wild:1, wild4:1, custom:1, wdraw2:1, wtarget2:1, wskip2:1, swap:1, shuffle:1, skipall:1 };
+    if (needColor[card.type] && COLORS.indexOf(d.chosenColor) < 0) return socket.emit("errorMsg", "Renk sec.");
+    if ((card.type === "wtarget2" || card.type === "swap") && !room.players.some(function (p) { return p.id === d.targetId && p.id !== pid; }))
+      return socket.emit("errorMsg", "Oyuncu sec.");
     if (card.type === "custom") {
       const others = room.players.filter(function (p) { return p.id !== pid; });
       const queue = []; let sum = 0;
@@ -122,6 +124,65 @@ io.on("connection", function (socket) {
       room.players.forEach(function (p) { if (!map[p.id]) map[p.id] = nameOf(room, pid) + " Ozel Joker atti. " + parts; });
       setNotice(g, nameOf(room, pid) + " Ozel Joker atti. " + parts, map);
       g.currentId = queue[0].playerId; emitRoom(room); return;
+    }
+    if (card.type === "wdraw2" || card.type === "wtarget2" || card.type === "wskip2" || card.type === "swap" || card.type === "shuffle" || card.type === "skipall" || card.type === "flip") {
+      delete g.pendingDrawn;
+      hand.splice(d.cardIndex, 1); g.discard.push(card);
+      io.to(room.code).emit("cardFly", { card: card, fromId: pid });
+      g.chosenColor = card.color === "black" ? d.chosenColor : card.color;
+      if (hand.length === 1 && !g.saidUno[pid]) drawCards(g, pid, 2);
+      if (hand.length === 0) { endRound(room, pid); emitRoom(room); return; }
+      const map = {};
+      if (card.type === "wdraw2") {
+        const nxt = nextSeat(room, pid, false);
+        g.plusStack = 2; g.stackKind = "wdraw2"; g.currentId = nxt;
+        setNotice(g, nameOf(room, pid) + " Joker +2 atti.", map);
+        emitRoom(room); return;
+      }
+      if (card.type === "wtarget2") {
+        g.drawQueue = [{ playerId: d.targetId, left: 2 }]; g.stackKind = "wtarget2"; g.currentId = d.targetId;
+        setNotice(g, nameOf(room, pid) + " Hedef +2: " + nameOf(room, d.targetId), map);
+        emitRoom(room); return;
+      }
+      if (card.type === "wskip2") {
+        let x = nextSeat(room, pid, false);
+        x = nextSeat(room, x, false);
+        x = nextSeat(room, x, false);
+        g.currentId = x;
+        setNotice(g, nameOf(room, pid) + " Cift Atla atti.", map);
+        emitRoom(room); return;
+      }
+      if (card.type === "swap") {
+        const tmp = g.hands[pid]; g.hands[pid] = g.hands[d.targetId] || []; g.hands[d.targetId] = tmp;
+        g.saidUno[pid] = false; g.saidUno[d.targetId] = false;
+        g.currentId = nextSeat(room, pid, false);
+        setNotice(g, nameOf(room, pid) + " el degistirdi: " + nameOf(room, d.targetId), map);
+        emitRoom(room); return;
+      }
+      if (card.type === "shuffle") {
+        const bags = [];
+        room.players.forEach(function (p) { (g.hands[p.id] || []).forEach(function (c) { bags.push(c); }); });
+        const mixed = shuffle(bags);
+        room.players.forEach(function (p) {
+          const n = (g.hands[p.id] || []).length;
+          g.hands[p.id] = mixed.splice(0, n);
+          g.saidUno[p.id] = false;
+        });
+        g.currentId = nextSeat(room, pid, false);
+        setNotice(g, nameOf(room, pid) + " elleri karistirdi.", map);
+        emitRoom(room); return;
+      }
+      if (card.type === "flip") {
+        g.direction *= -1;
+        g.currentId = nextSeat(room, pid, false);
+        setNotice(g, nameOf(room, pid) + " Cevir atti. Yon dondu.", map);
+        emitRoom(room); return;
+      }
+      if (card.type === "skipall") {
+        g.currentId = pid;
+        setNotice(g, nameOf(room, pid) + " herkesi atladi. Tekrar oynar.", map);
+        emitRoom(room); return;
+      }
     }
     delete g.pendingDrawn;
     hand.splice(d.cardIndex, 1); g.discard.push(card);
