@@ -9,7 +9,14 @@ socket.on("joined", function (d) { me.playerId = d.playerId; me.token = d.token;
 socket.on("state", function (s) { state = s; if (s.status === "playing" || s.status === "finished" || s.status === "roundEnd" || s.status === "winnerShow") screen = "game"; if (s.status === "lobby") screen = "lobby"; render(); });
 socket.on("errorMsg", function (m) { err = m; render(); });
 socket.on("drawnPlayable", function () { drawnChoice = true; render(); });
-function esc(s) { return String(s == null ? "" : s).replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,"""); }
+function esc(s) {
+  s = String(s == null ? "" : s);
+  s = s.split("&").join(String.fromCharCode(38) + "amp;");
+  s = s.split("<").join(String.fromCharCode(38) + "lt;");
+  s = s.split(">").join(String.fromCharCode(38) + "gt;");
+  s = s.split('"').join(String.fromCharCode(38) + "quot;");
+  return s;
+}
 function canPlay(card, top, chosenColor, stackKind) {
   if (!card) return false; if (!top) return true;
   if (stackKind === "draw2") return card.type === "draw2";
