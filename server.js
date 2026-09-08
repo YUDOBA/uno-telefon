@@ -57,10 +57,10 @@ function canPlay(card, top, chosenColor) {
 function hasMatchingColor(hand, color) { return hand.some((c) => c.color === color); }
 const rooms = new Map();
 function codeGen() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
-  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return rooms.has(code) ? codeGen() : code;
+  for (let i = 0; i < 4; i++) code += String(Math.floor(Math.random() * 10));
+  if (code === "0000" || rooms.has(code)) return codeGen();
+  return code;
 }
 function publicRoom(room, viewerId) {
   const g = room.game;
@@ -68,7 +68,7 @@ function publicRoom(room, viewerId) {
     code: room.code, maxPlayers: room.maxPlayers, hostId: room.hostId, status: room.status,
     players: room.players.map((p) => ({
       id: p.id, name: p.name, connected: p.connected,
-      cardCount: g ? g.hands[p.id].length : 0,
+      cardCount: g && g.hands[p.id] ? g.hands[p.id].length : 0,
       saidUno: g ? !!g.saidUno[p.id] : false,
       isTurn: g ? g.currentId === p.id : false
     })),
@@ -161,7 +161,8 @@ io.on("connection", (socket) => {
     emitRoom(room);
   });
   socket.on("join", ({ code, name }) => {
-    const room = rooms.get(String(code || "").toUpperCase());
+    const raw = String(code || "").replace(/\s/g, "");
+    const room = rooms.get(raw) || rooms.get(raw.toUpperCase());
     if (!room) return socket.emit("errorMsg", "Oda bulunamadi.");
     if (room.status !== "lobby") return socket.emit("errorMsg", "Oyun zaten basladi.");
     if (room.players.length >= room.maxPlayers) return socket.emit("errorMsg", "Oda dolu.");
@@ -248,9 +249,6 @@ io.on("connection", (socket) => {
     const pid = socket.data.playerId;
     if (g.winnerId || g.currentId !== pid) return;
     const top = g.discard[g.discard.length - 1];
-    if (g.hands[pid].some((c) => canPlay(c, top, g.chosenColor))) {
-      return socket.emit("errorMsg", "Oynayabilecegin kart var, cekemezsin.");
-    }
     const taken = drawCards(g, pid, 1);
     const drawn = taken[0];
     if (drawn && canPlay(drawn, top, g.chosenColor)) {
@@ -260,7 +258,7 @@ io.on("connection", (socket) => {
       socket.emit("drawnPlayable");
       return;
     }
-    g.lastAction = nameOf(room, pid) + " kart cekti, oynayamadi.";
+    g.lastAction = nameOf(room, pid) + " kart cekti.";
     g.currentId = nextAlive(room, pid, false);
     emitRoom(room);
   });
