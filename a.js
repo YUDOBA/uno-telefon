@@ -8,7 +8,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.static(path.join(__dirname, "public")));
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V5";
+const VERSION = "V6";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
@@ -127,6 +127,9 @@ function drawCards(game, playerId, n) {
       const top = game.discard.pop();
       game.deck = shuffle(game.discard);
       game.discard = top ? [top] : [];
+      game.notice = "Cekme destesi bitti. Yere atilan kartlar karistirildi, yeni deste olustu.";
+      game.lastAction = game.notice;
+      if (!game.noticeYou) game.noticeYou = {};
       if (!game.deck.length) break;
     }
     const c = game.deck.pop();
@@ -144,7 +147,7 @@ function startGame(room) {
     for (const p of room.players) hands[p.id].push(deck.pop());
   }
   let first = deck.pop();
-  while (first && (first.type === "wild4" || first.type === "custom")) { deck.unshift(first); first = deck.pop(); }
+  while (first && first.type !== "number") { deck.unshift(first); first = deck.pop(); }
   if (!room.seats || room.seats.length !== room.players.length) {
     room.seats = room.players.map(function (p) { return p.id; });
   }
