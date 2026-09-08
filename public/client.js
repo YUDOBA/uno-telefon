@@ -1,12 +1,12 @@
 const socket = io();
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V4";
+const VERSION = "V5";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
 let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); screen = "lobby"; err = ""; render(); });
 socket.on("joined", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); screen = "lobby"; err = ""; render(); });
-socket.on("state", function (s) { state = s; if (s.status === "playing" || s.status === "finished" || s.status === "roundEnd") screen = "game"; if (s.status === "lobby") screen = "lobby"; render(); });
+socket.on("state", function (s) { state = s; if (s.status === "playing" || s.status === "finished" || s.status === "roundEnd" || s.status === "winnerShow") screen = "game"; if (s.status === "lobby") screen = "lobby"; render(); });
 socket.on("errorMsg", function (m) { err = m; render(); });
 socket.on("drawnPlayable", function () { drawnChoice = true; render(); });
 function esc(s) { return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
@@ -63,23 +63,42 @@ function lobby() {
   });
   html += "</div>";
   if (isHost) {
-    html += "<div class=\"panel\"><label>Tur sayisi</label><select id=\"rounds\"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></div>";
+    var rt = state.roundsTotal || 3;
+    html += "<div class=\"panel\"><label>Tur sayisi (secili: "+rt+")</label><select id=\"rounds\" onchange=\"setRounds()\">";
+    for (var n=1;n<=10;n++) html += "<option"+(n===rt?" selected":"")+">"+n+"</option>";
+    html += "</select></div>";
     html += "<button class=\"btn btn-main\" " + (state.players.length < 2 ? "disabled" : "") + " onclick=\"doStart()\">Oyunu baslat</button>";
   } else html += "<p class=\"sub\">Kurucu sirayi ayarlar ve baslatir.</p>";
   html += "<p class=\"err\">" + esc(err) + "</p>" + ver();
   app.innerHTML = html;
 }
+function winnerName() {
+  var id = state.lastWinnerId;
+  if (state.gameOver) {
+    var best=null, bestS=1e9;
+    (state.players||[]).forEach(function(p){ if((p.score||0)<bestS){bestS=p.score||0;best=p;} });
+    return best ? best.name : "Oyuncu";
+  }
+  for (var i=0;i<(state.players||[]).length;i++) if (state.players[i].id===id) return state.players[i].name;
+  return "Oyuncu";
+}
 function scoreTable() {
   var rows = (state.players || []).slice().sort(function (a, b) { return (a.score || 0) - (b.score || 0); });
+  var ready = state.readyNext || {};
+  var nReady = 0; (state.players||[]).forEach(function(p){ if(ready[p.id]) nReady++; });
   var h = "<div class=\"panel\"><h2>Skor</h2><p>Tur " + (state.roundNow || 1) + " / " + (state.roundsTotal || 1) + "</p>";
   rows.forEach(function (p, i) {
     var extra = state.lastRoundPts && state.lastRoundPts[p.id] != null ? " (tur +" + state.lastRoundPts[p.id] + ")" : "";
-    h += "<div class=\"row\"><span>" + (i + 1) + ". " + esc(p.name) + "</span><span>" + (p.score || 0) + extra + "</span></div>";
+    var tick = ready[p.id] ? " hazir" : "";
+    h += "<div class=\"row\"><span>" + (i + 1) + ". " + esc(p.name) + tick + "</span><span>" + (p.score || 0) + extra + "</span></div>";
   });
   if (state.status === "playing") h += "<button class=\"btn btn-ghost\" onclick=\"showScores=false;render()\">Oyuna don</button>";
-  if (state.status === "roundEnd" && state.hostId === me.playerId) h += "<button class=\"btn btn-main\" onclick=\"socket.emit('start',{})\">Sonraki tur</button>";
-  if (state.status === "finished") {
-    h += "<p><b>En dusuk puan kazanir.</b></p>";
+  if (state.status === "winnerShow" && !state.gameOver) {
+    if (!(state.readyNext||{})[me.playerId]) h += "<button class=\"btn btn-main\" onclick=\"socket.emit('readyNext')\">Sonraki tur</button><p class=\"sub\">Herkes basinca tur baslar ("+nReady+"/"+(state.players||[]).length+")</p>";
+    else h += "<p class=\"sub\">Hazirsin. Digerleri bekleniyor ("+nReady+"/"+(state.players||[]).length+")</p>";
+  }
+  if (state.status === "winnerShow" && state.gameOver) {
+    h += "<p><b>En dusuk puan kazanir: "+esc(winnerName())+"</b></p>";
     if (state.hostId === me.playerId) h += "<button class=\"btn btn-main\" onclick=\"socket.emit('again')\">Yeni oyun</button>";
   }
   return h + "</div>";
@@ -117,7 +136,17 @@ function assignPanel() {
 }
 function game() {
   var g = state && state.game;
-  if (state.status === "roundEnd" || state.status === "finished" || showScores) {
+  if (state.status === "winnerShow") {
+    var saw = (state.sawScores||{})[me.playerId];
+    var top = "<div class=\"row\" style=\"border:0\"><strong>Oda " + esc(state.code) + "</strong><span class=\"badge\">Tur " + state.roundNow + "/" + state.roundsTotal + "</span></div>";
+    if (!saw) {
+      app.innerHTML = top + "<div class=\"panel\"><h1>" + esc(winnerName()) + " kazandi</h1><p>" + (state.gameOver ? "Oyun bitti. En dusuk toplam puan kazanir." : ("Tur " + state.roundNow + " bitti.")) + "</p><button class=\"btn btn-main\" onclick=\"socket.emit('sawScores')\">Skor tabelasi</button></div>" + ver();
+      return;
+    }
+    app.innerHTML = top + scoreTable() + ver();
+    return;
+  }
+  if (showScores) {
     app.innerHTML = "<div class=\"row\" style=\"border:0\"><strong>Oda " + esc(state.code) + "</strong><span class=\"badge\">Tur " + state.roundNow + "/" + state.roundsTotal + "</span></div>" + scoreTable() + ver();
     return;
   }
@@ -155,6 +184,7 @@ function moveSeat(i, dir) {
   var t = seats[i]; seats[i] = seats[j]; seats[j] = t;
   socket.emit("setSeats", { seats: seats });
 }
+function setRounds(){ var r=document.getElementById("rounds"); socket.emit("setRounds",{rounds:r?r.value:3}); }
 function doStart() {
   var r = document.getElementById("rounds");
   socket.emit("start", { rounds: r ? r.value : 3 });
