@@ -112,6 +112,7 @@ io.on("connection", function (socket) {
       if (sum !== 8) return socket.emit("errorMsg", "Ozel Jokerde toplam 8 olmali.");
       delete g.pendingDrawn;
       hand.splice(d.cardIndex, 1); g.discard.push(card); g.chosenColor = d.chosenColor;
+      io.to(room.code).emit("cardFly", { card: card, fromId: pid });
       if (hand.length === 1 && !g.saidUno[pid]) drawCards(g, pid, 2);
       if (hand.length === 0) { endRound(room, pid); emitRoom(room); return; }
       g.drawQueue = queue; g.stackKind = "custom"; g.afterDrawTo = pid;
@@ -124,6 +125,7 @@ io.on("connection", function (socket) {
     }
     delete g.pendingDrawn;
     hand.splice(d.cardIndex, 1); g.discard.push(card);
+    io.to(room.code).emit("cardFly", { card: card, fromId: pid });
     g.chosenColor = card.color === "black" ? d.chosenColor : card.color;
     if (hand.length === 1 && !g.saidUno[pid]) drawCards(g, pid, 2);
     if (hand.length === 0) { endRound(room, pid); emitRoom(room); return; }
