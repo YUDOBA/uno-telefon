@@ -1,7 +1,7 @@
 const socket = io();
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V8";
+const VERSION = "V9";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
 let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); screen = "lobby"; err = ""; render(); });
@@ -116,7 +116,14 @@ function tableHtml() {
   var seats = state.seats || state.players.map(function (p) { return p.id; });
   var selfI = seats.indexOf(me.playerId); if (selfI < 0) selfI = 0;
   var n = seats.length || 1, html = "<div class=\"table\">";
-  html += "<div class=\"felt\">" + (state.game && state.game.top ? cardHtml(state.game.top, "") : "") + "<div class=\"dir\">" + (state.game && state.game.direction === 1 ? "Saat yonunde" : "Ters yon") + "</div></div>";
+  var g0 = state.game || {};
+  var clockwise = !g0.direction || g0.direction === 1;
+  var colorName = COLOR_TR[g0.chosenColor] || "";
+  html += "<div class=\"felt\">";
+  html += clockwise ? "<div class=\"dir-arrow\">&#8635; Saat</div>" : "<div class=\"dir-arrow revd\">&#8634; Ters</div>";
+  html += (g0.top ? cardHtml(g0.top, "") : "");
+  if (colorName) html += "<div class=\"color-name col-"+g0.chosenColor+"\">"+colorName+"</div>";
+  html += "</div>";
   for (var i = 0; i < n; i++) {
     var pid = seats[i], p = null;
     for (var k = 0; k < state.players.length; k++) if (state.players[k].id === pid) p = state.players[k];
@@ -170,9 +177,14 @@ function game() {
   html += "<div class=\"hand\">" + (g.hand || []).map(function (c, idx) {
     return cardHtml(c, myTurn && canPlay(c, g.top, g.chosenColor, g.stackKind) ? "ok" : "off", idx);
   }).join("") + "</div>";
-  html += "<button class=\"btn btn-ghost\" " + (myTurn && !state.paused ? "" : "disabled") + " onclick=\"socket.emit('draw')\">Kart cek</button>";
+  var canPass = !!(drawnChoice || g.canPass) && myTurn && !g.plusStack && !(g.drawQueue && g.drawQueue.length);
+  var drawOn = myTurn && !state.paused;
+  html += "<div class=\"actions\">";
+  html += "<button class=\"btn " + (drawOn ? "btn-draw" : "btn-ghost") + "\" " + (drawOn ? "" : "disabled") + " onclick=\"socket.emit('draw')\">Kart cek</button>";
+  html += "<button class=\"btn btn-ghost\" " + (canPass ? "" : "disabled") + " onclick=\"passDrawn()\">Pas</button>";
   html += "<button class=\"btn btn-main\" onclick=\"socket.emit('uno')\">UNO!</button>";
-  html += "<button class=\"btn btn-ghost\" onclick=\"showScores=true;render()\">Skor tabelasi</button>";
+  html += "<button class=\"btn btn-ghost\" onclick=\"showScores=true;render()\">Skor</button>";
+  html += "</div>";
   if (pendingWild !== null && !pendingCustom) {
     html += "<div class=\"panel\"><p>Renk sec</p><div class=\"colors\">";
     html += "<button style=\"background:var(--red)\" onclick=\"confirmWild('red')\">Kirmizi</button>";
@@ -182,7 +194,7 @@ function game() {
   }
   if (pendingCustom && pendingCustom.color) html += assignPanel();
   if ((drawnChoice || g.canPass) && myTurn && !g.plusStack && !(g.drawQueue && g.drawQueue.length)) {
-    html += "<div class=\"panel\"><p>Cektigin karti oynayabilirsin.</p><button class=\"btn btn-main\" onclick=\"playDrawn()\">Oyna</button><button class=\"btn btn-ghost\" onclick=\"passDrawn()\">Pas</button></div>";
+    html += "<div class=\"panel warn\">Cektigin karti oynayabilirsin veya Pas.</div>";
   }
   html += "<p class=\"err\">" + esc(err) + "</p>" + ver();
   app.innerHTML = html;
