@@ -7,16 +7,20 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#070b14" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Uno Telefon</title>
-  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/style.css?v=15c" />
 </head>
 <body>
   <div id="app">
     <div class="logo">UNO</div>
-    <p class="sub" style="text-align:center">Yukleniyor...</p>
+    <p class="sub" style="text-align:center">Uno Telefon V15</p>
   </div>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/client.js?v=15"></script>
-  <script>function ver(){return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V15</p>";}</script>
+  <script src="/client.js?v=15c"></script>
+  <script>
+    function ver(){ return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V15</p>"; }
+    try { render(); } catch (e) {}
+  </script>
 </body>
 </html>
