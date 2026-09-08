@@ -8,7 +8,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.static(path.join(__dirname, "public")));
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V2";
+const VERSION = "V3";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
@@ -34,6 +34,7 @@ function makeDeck() {
   for (let i = 0; i < 4; i++) {
     deck.push({ color: "black", type: "wild", value: "wild" });
     deck.push({ color: "black", type: "wild4", value: "wild4" });
+    deck.push({ color: "black", type: "custom", value: "custom" });
   }
   return shuffle(deck);
 }
@@ -44,14 +45,15 @@ function cardLabel(c) {
   if (c.type === "draw2") return COLOR_TR[c.color] + " +2";
   if (c.type === "wild") return "Joker";
   if (c.type === "wild4") return "Joker +4";
+  if (c.type === "custom") return "Ozel Joker (8)";
   return "?";
 }
 function canPlay(card, top, chosenColor, stackKind) {
   if (!top) return true;
   if (stackKind === "draw2") return card.type === "draw2";
-  if (stackKind === "wild4") return false;
-  if (card.type === "wild") return true;
-  if (card.type === "wild4") return top.type === "number" || top.type === "wild" || top.type === "wild4";
+  if (stackKind === "wild4" || stackKind === "custom") return false;
+  if (card.type === "wild" || card.type === "custom") return true;
+  if (card.type === "wild4") return top.type === "number" || top.type === "wild" || top.type === "wild4" || top.type === "custom";
   const color = top.color === "black" ? chosenColor : top.color;
   if (card.color === color) return true;
   if (card.type === "number" && top.type === "number" && card.value === top.value) return true;
@@ -80,7 +82,8 @@ function nextSeat(room, fromId, skipOne) {
 }
 function publicRoom(room, viewerId) {
   const g = room.game;
-  const actor = g ? g.currentId : null;
+  let actor = g ? g.currentId : null;
+  if (g && g.drawQueue && g.drawQueue.length) actor = g.drawQueue[0].playerId;
   return {
     version: VERSION, code: room.code, maxPlayers: room.maxPlayers, hostId: room.hostId, status: room.status,
     paused: !!(g && anyoneOffline(room) && room.status === "playing"),
@@ -94,9 +97,11 @@ function publicRoom(room, viewerId) {
     }),
     game: g ? {
       top: g.discard[g.discard.length - 1], chosenColor: g.chosenColor, direction: g.direction,
-      currentId: g.currentId, actorId: actor, winnerId: g.winnerId, lastAction: g.lastAction,
+      currentId: actor, actorId: actor, winnerId: g.winnerId, lastAction: g.lastAction,
+      notice: g.notice || "", noticeYou: g.noticeYou && g.noticeYou[viewerId] ? g.noticeYou[viewerId] : "",
       hand: g.hands[viewerId] || [], deckCount: g.deck.length,
-      plusStack: g.plusStack || 0, stackKind: g.stackKind || null
+      plusStack: g.plusStack || 0, stackKind: g.stackKind || null,
+      drawQueue: g.drawQueue || []
     } : null
   };
 }
@@ -130,12 +135,12 @@ function startGame(room) {
     for (const p of room.players) hands[p.id].push(deck.pop());
   }
   let first = deck.pop();
-  while (first && first.type === "wild4") { deck.unshift(first); first = deck.pop(); }
+  while (first && (first.type === "wild4" || first.type === "custom")) { deck.unshift(first); first = deck.pop(); }
   room.seats = shuffle(room.players.map(function (p) { return p.id; }));
   room.game = {
     deck: deck, discard: [first], hands: hands, currentId: room.seats[0], direction: 1,
     chosenColor: first.color === "black" ? COLORS[Math.floor(Math.random() * 4)] : first.color,
-    saidUno: {}, winnerId: null, plusStack: 0, stackKind: null,
+    saidUno: {}, winnerId: null, plusStack: 0, stackKind: null, drawQueue: [], notice: "", noticeYou: {},
     lastAction: "Oyun basladi. Ust kart: " + cardLabel(first)
   };
   room.status = "playing";
