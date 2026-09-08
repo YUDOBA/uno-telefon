@@ -2,13 +2,15 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
+const fs = require("fs");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.static(path.join(__dirname, "public")));
+app.get("/health", function (req, res) { res.send("ok"); });
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V7";
+const VERSION = "V10";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
@@ -65,6 +67,36 @@ function canPlay(card, top, chosenColor, stackKind) {
   return false;
 }
 const rooms = new Map();
+const STORE = path.join(__dirname, "rooms-store.json");
+function saveRooms() {
+  try {
+    const list = [];
+    rooms.forEach(function (room) {
+      list.push({
+        code: room.code, hostId: room.hostId, maxPlayers: room.maxPlayers, status: room.status,
+        seats: room.seats, roundsTotal: room.roundsTotal, roundNow: room.roundNow,
+        scores: room.scores || {}, lastRoundPts: room.lastRoundPts || {},
+        lastWinnerId: room.lastWinnerId || null, gameOver: !!room.gameOver,
+        readyNext: room.readyNext || {}, sawScores: room.sawScores || {},
+        players: (room.players || []).map(function (p) {
+          return { id: p.id, token: p.token, name: p.name, connected: false, socketId: null };
+        }),
+        game: room.game || null
+      });
+    });
+    fs.writeFileSync(STORE, JSON.stringify(list));
+  } catch (e) {}
+}
+function loadRooms() {
+  try {
+    if (!fs.existsSync(STORE)) return;
+    const list = JSON.parse(fs.readFileSync(STORE, "utf8") || "[]");
+    (list || []).forEach(function (room) {
+      if (room && room.code && !rooms.has(String(room.code))) rooms.set(String(room.code), room);
+    });
+  } catch (e) {}
+}
+loadRooms();
 function normCode(v) { return String(v || "").replace(/\D/g, ""); }
 function codeGen() {
   const code = String(1000 + Math.floor(Math.random() * 9000));
@@ -120,6 +152,7 @@ function emitRoom(room) {
   for (const p of room.players) {
     if (p.socketId) io.to(p.socketId).emit("state", publicRoom(room, p.id));
   }
+  saveRooms();
 }
 function drawCards(game, playerId, n) {
   const taken = [];
