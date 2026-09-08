@@ -54,3 +54,14 @@ input,select { width:100%; padding:14px; border-radius:12px; border:1px solid #2
 .guide { display:flex; gap:12px; align-items:flex-start; }
 .guide .ucard { flex-shrink:0; }
 .guide .sub { margin:6px 0 0; }
+.actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+.actions .btn { margin-top:0; }
+.btn-draw { background:#18c46a; color:#06210f; }
+.dir-arrow { font-size:1.05rem; font-weight:800; color:var(--accent); margin-bottom:6px; }
+.dir-arrow.revd { color:#7ecbff; }
+.color-name { margin-top:6px; font-weight:800; font-size:.85rem; }
+.color-name.col-red { color:#ff6b6b; }
+.color-name.col-yellow { color:#f7d117; }
+.color-name.col-green { color:#3dce7a; }
+.color-name.col-blue { color:#6aa8ff; }
+.felt .ucard { margin:0 auto; }
