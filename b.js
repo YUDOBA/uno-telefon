@@ -49,20 +49,41 @@ io.on("connection", function (socket) {
     room.seats = ids.slice();
     emitRoom(room);
   });
+  socket.on("setRounds", function (d) {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room || room.hostId !== socket.data.playerId || room.status !== "lobby") return;
+    room.roundsTotal = Math.max(1, Math.min(15, parseInt(d && d.rounds, 10) || 3));
+    emitRoom(room);
+  });
   socket.on("start", function (d) {
     const room = rooms.get(socket.data.roomCode);
     if (!room || room.hostId !== socket.data.playerId) return socket.emit("errorMsg", "Sadece kurucu baslatabilir.");
-    if (room.status !== "lobby" && room.status !== "roundEnd") return;
+    if (room.status !== "lobby") return;
     if (room.players.length < 2) return socket.emit("errorMsg", "En az 2 oyuncu gerekir.");
-    if (room.status === "lobby") {
-      room.roundsTotal = Math.max(1, Math.min(15, parseInt(d && d.rounds, 10) || 3));
-      room.roundNow = 1;
-      room.scores = {};
-      room.players.forEach(function (p) { room.scores[p.id] = 0; });
-    } else {
-      room.roundNow += 1;
-    }
+    room.roundsTotal = Math.max(1, Math.min(15, parseInt((d && d.rounds) || room.roundsTotal, 10) || 3));
+    room.roundNow = 1;
+    room.scores = {};
+    room.players.forEach(function (p) { room.scores[p.id] = 0; });
     startGame(room); emitRoom(room);
+  });
+  socket.on("sawScores", function () {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room || room.status !== "winnerShow") return;
+    if (!room.sawScores) room.sawScores = {};
+    room.sawScores[socket.data.playerId] = true;
+    emitRoom(room);
+  });
+  socket.on("readyNext", function () {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room || room.status !== "winnerShow" || room.gameOver) return;
+    if (!room.readyNext) room.readyNext = {};
+    room.readyNext[socket.data.playerId] = true;
+    const all = room.players.every(function (p) { return room.readyNext[p.id]; });
+    if (all) {
+      room.roundNow += 1;
+      startGame(room);
+    }
+    emitRoom(room);
   });
   socket.on("play", function (d) {
     d = d || {};
