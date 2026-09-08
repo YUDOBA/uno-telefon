@@ -22,10 +22,22 @@ input,select { width:100%; padding:14px; border-radius:12px; border:1px solid #2
 .logo { font-size:3rem; font-weight:900; text-align:center; color:var(--accent); margin-top:24px; }
 .colors { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
 .colors button { height:48px; border:0; border-radius:10px; color:#fff; font-weight:700; }
-.hand { display:flex; gap:8px; overflow-x:auto; padding:10px 2px 18px; }
-.hand .ucard { cursor:pointer; }
-.hand .ucard.off { opacity:.35; }
-.hand .ucard.ok { transform:translateY(-6px); }
+.hand { display:flex; justify-content:center; overflow-x:auto; padding:18px 6px 10px; min-height:118px; }
+.hand .ucard { cursor:pointer; margin-left:-38px; }
+.hand .ucard:first-child { margin-left:0; }
+.hand .ucard.off { opacity:.72; }
+.hand .ucard.ok { box-shadow:0 0 0 2px #ffd000; }
+.hand .ucard.picked { z-index:30; transform:translateY(-16px); margin-right:10px; box-shadow:0 10px 22px rgba(0,0,0,.45); }
+.ucard.lg { width:110px; height:166px; margin:0 auto; }
+.peek { text-align:center; margin:8px 0 12px; }
+.flywrap { position:fixed; inset:0; pointer-events:none; z-index:80; }
+.flycard { position:absolute; left:50%; top:58%; animation:flyin 2s ease forwards; }
+@keyframes flyin {
+  0% { transform:translate(-50%,40vh) scale(.6); opacity:.3; }
+  35% { transform:translate(-50%,-10vh) scale(1.15); opacity:1; }
+  100% { transform:translate(-50%,-22vh) scale(1); opacity:1; }
+}
+.deck-left { margin-top:6px; font-size:.78rem; font-weight:700; color:#c9d6ea; }
 .ucard { position:relative; width:70px; height:106px; border-radius:10px; border:3px solid #f3f3f3; flex-shrink:0; overflow:hidden; color:#fff; box-shadow:0 8px 18px rgba(0,0,0,.4); }
 .ucard.sm { width:66px; height:100px; }
 .ucard.red { background:var(--red); } .ucard.yellow { background:var(--yellow); } .ucard.green { background:var(--green); } .ucard.blue { background:var(--blue); } .ucard.black { background:#111; }
