@@ -101,6 +101,8 @@ function renderLobby() {
 }
 function tableHtml() {
   var seats = state.seats || state.players.map(function (p) { return p.id; });
+  var selfI = seats.indexOf(me.playerId);
+  if (selfI < 0) selfI = 0;
   var n = seats.length || 1;
   var html = "<div class=\"table\">";
   html += "<div class=\"felt\">" + (state.game && state.game.top ? cardHtml(state.game.top, "") : "") + "<div class=\"dir\">" + (state.game && state.game.direction === 1 ? "Saat yonunde" : "Ters yon") + "</div></div>";
@@ -109,7 +111,7 @@ function tableHtml() {
     var p = null;
     for (var k = 0; k < state.players.length; k++) if (state.players[k].id === pid) p = state.players[k];
     if (!p) continue;
-    var a = Math.PI / 2 + (i / n) * 2 * Math.PI;
+    var a = Math.PI / 2 + ((i - selfI) / n) * 2 * Math.PI;
     var x = 50 + Math.cos(a) * 40;
     var y = 50 + Math.sin(a) * 38;
     var turn = p.isTurn ? " seat-turn" : "";
