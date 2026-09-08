@@ -1,7 +1,6 @@
 const socket = io();
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const SYMBOL = { skip: "X", reverse: "R", draw2: "+2", wild: "*", wild4: "+4" };
 let me = { playerId: null, name: "" };
 let state = null;
 let screen = "home";
@@ -31,11 +30,34 @@ function canPlay(card, top, chosenColor) {
   if (card.type !== "number" && card.type === top.type && card.color !== "black") return true;
   return false;
 }
+function corner(txt) {
+  return "<span class=\"c-tl\">" + txt + "</span><span class=\"c-br\">" + txt + "</span>";
+}
 function cardHtml(c, extra, idx) {
   extra = extra || "";
-  var face = c.type === "number" ? String(c.value) : (SYMBOL[c.type] || "?");
   var click = idx == null ? "" : (" onclick=\"tryPlay(" + idx + ")\"");
-  return "<div class=\"ucard sm " + c.color + " " + extra + "\"" + click + ">" + face + "</div>";
+  var mid = "";
+  var cor = "";
+  if (c.type === "number") {
+    cor = corner(String(c.value));
+    mid = "<div class=\"oval\"><span class=\"oval-n\">" + c.value + "</span></div>";
+  } else if (c.type === "skip") {
+    cor = corner("∅");
+    mid = "<div class=\"oval\"><div class=\"skip-ring mark\"></div></div>";
+  } else if (c.type === "reverse") {
+    cor = corner("⇄");
+    mid = "<div class=\"oval\"><div class=\"rev mark\">⇄</div></div>";
+  } else if (c.type === "draw2") {
+    cor = corner("+2");
+    mid = "<div class=\"oval\"><div class=\"mini-stack mark\"><i class=\"mini\"></i><i class=\"mini\"></i></div><div class=\"plus\">+2</div></div>";
+  } else if (c.type === "wild") {
+    cor = corner("");
+    mid = "<div class=\"oval\"><div class=\"wheel\"><i></i><i></i><i></i><i></i></div></div>";
+  } else if (c.type === "wild4") {
+    cor = corner("+4");
+    mid = "<div class=\"oval\"><div class=\"wheel\"><i></i><i></i><i></i><i></i></div></div><div class=\"uno-word\">+4</div>";
+  }
+  return "<div class=\"ucard sm " + c.color + " " + extra + "\"" + click + ">" + cor + mid + "</div>";
 }
 function render() {
   try {
@@ -55,7 +77,7 @@ function renderCreate() {
   app.innerHTML = "<h1>Oyun kur</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Toplam oyuncu</label><select id=\"max\"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select><button class=\"btn btn-main\" onclick=\"doCreate()\">Kur ve kod al</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>";
 }
 function renderJoin() {
-  app.innerHTML = "<h1>Oyuna katil</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Oyun kodu</label><input id=\"code\" maxlength=\"6\" style=\"text-transform:uppercase\" /><button class=\"btn btn-main\" onclick=\"doJoin()\">Katil</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>";
+  app.innerHTML = "<h1>Oyuna katil</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Oyun kodu</label><input id=\"code\" maxlength=\"6\" inputmode=\"numeric\" /><button class=\"btn btn-main\" onclick=\"doJoin()\">Katil</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>";
 }
 function renderLobby() {
   if (!state) { app.innerHTML = "<p>Baglaniyor...</p>"; return; }
@@ -151,7 +173,7 @@ function doCreate() {
 }
 function doJoin() {
   var name = document.getElementById("name").value.trim() || "Oyuncu";
-  var code = document.getElementById("code").value.trim().toUpperCase();
+  var code = document.getElementById("code").value.trim();
   me.name = name;
   socket.emit("join", { name: name, code: code });
 }
