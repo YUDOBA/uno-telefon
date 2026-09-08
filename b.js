@@ -89,14 +89,15 @@ io.on("connection", function (socket) {
     d = d || {};
     const room = rooms.get(socket.data.roomCode);
     if (!room || room.status !== "playing") return;
-    if (anyoneOffline(room)) return socket.emit("errorMsg", "Kopan oyuncu donene kadar bekleniyor.");
     const g = room.game; const pid = socket.data.playerId;
-    if (g.winnerId) return;
+    const actorP = room.players.find(function (x) { return x.id === g.currentId; });
+    if (actorP && !actorP.connected) return socket.emit("errorMsg", "Siradaki oyuncu kopuk.");
+    if (g.winnerId) return socket.emit("errorMsg", "Tur bitti.");
     if (g.drawQueue && g.drawQueue.length) return socket.emit("errorMsg", "Once ceza cekilmeli.");
     if (g.currentId !== pid) return socket.emit("errorMsg", "Sira sende degil.");
     const hand = g.hands[pid]; const card = hand[d.cardIndex]; if (!card) return;
     const top = g.discard[g.discard.length - 1];
-    if (!canPlay(card, top, g.chosenColor, g.stackKind)) return socket.emit("errorMsg", "Bu kart oynanamaz.");
+    if (!canPlay(card, top, g.chosenColor, g.plusStack > 0 ? g.stackKind : null)) return socket.emit("errorMsg", "Bu kart oynanamaz.");
     if ((card.type === "wild" || card.type === "wild4" || card.type === "custom") && COLORS.indexOf(d.chosenColor) < 0)
       return socket.emit("errorMsg", "Renk sec.");
     if (card.type === "custom") {
@@ -108,6 +109,7 @@ io.on("connection", function (socket) {
         queue.push({ playerId: a.playerId, left: n }); sum += n;
       });
       if (sum !== 8) return socket.emit("errorMsg", "Ozel Jokerde toplam 8 olmali.");
+      delete g.pendingDrawn;
       hand.splice(d.cardIndex, 1); g.discard.push(card); g.chosenColor = d.chosenColor;
       if (hand.length === 1 && !g.saidUno[pid]) drawCards(g, pid, 2);
       if (hand.length === 0) { endRound(room, pid); emitRoom(room); return; }
@@ -119,6 +121,7 @@ io.on("connection", function (socket) {
       setNotice(g, nameOf(room, pid) + " Ozel Joker atti. " + parts, map);
       g.currentId = queue[0].playerId; emitRoom(room); return;
     }
+    delete g.pendingDrawn;
     hand.splice(d.cardIndex, 1); g.discard.push(card);
     g.chosenColor = card.color === "black" ? d.chosenColor : card.color;
     if (hand.length === 1 && !g.saidUno[pid]) drawCards(g, pid, 2);
@@ -171,9 +174,8 @@ io.on("connection", function (socket) {
   socket.on("draw", function () {
     const room = rooms.get(socket.data.roomCode);
     if (!room || room.status !== "playing") return;
-    if (anyoneOffline(room)) return socket.emit("errorMsg", "Oyun bekliyor.");
     const g = room.game; const pid = socket.data.playerId;
-    if (g.winnerId) return;
+    if (g.winnerId) return socket.emit("errorMsg", "Tur bitti.");
     if (g.drawQueue && g.drawQueue.length) {
       const q = g.drawQueue[0];
       if (q.playerId !== pid) return socket.emit("errorMsg", "Ceza sirasi sende degil.");
@@ -205,7 +207,7 @@ io.on("connection", function (socket) {
     const drawn = taken[0];
     if (drawn && canPlay(drawn, top, g.chosenColor, null)) {
       g.pendingDrawn = { playerId: pid, card: drawn };
-      g.lastAction = nameOf(room, pid) + " kart cekti, oynayabilir.";
+      g.lastAction = nameOf(room, pid) + " kart cekti, oynayabilir veya pas.";
       emitRoom(room); socket.emit("drawnPlayable"); return;
     }
     g.lastAction = nameOf(room, pid) + " kart cekti.";
@@ -214,9 +216,11 @@ io.on("connection", function (socket) {
   });
   socket.on("passAfterDraw", function () {
     const room = rooms.get(socket.data.roomCode);
-    if (!room || !room.game) return;
+    if (!room || !room.game || room.status !== "playing") return;
     const g = room.game; const pid = socket.data.playerId;
-    if (!g.pendingDrawn || g.pendingDrawn.playerId !== pid) return;
+    if (g.winnerId) return;
+    if (g.currentId !== pid) return socket.emit("errorMsg", "Sira sende degil.");
+    if (g.plusStack > 0 || (g.drawQueue && g.drawQueue.length)) return socket.emit("errorMsg", "Once cezayi cek.");
     delete g.pendingDrawn;
     g.lastAction = nameOf(room, pid) + " pas gecti.";
     g.currentId = nextSeat(room, pid, false);
