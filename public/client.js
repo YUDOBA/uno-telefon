@@ -1,7 +1,7 @@
 const socket = io();
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V5";
+const VERSION = "V7";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
 let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); screen = "lobby"; err = ""; render(); });
@@ -9,7 +9,7 @@ socket.on("joined", function (d) { me.playerId = d.playerId; me.token = d.token;
 socket.on("state", function (s) { state = s; if (s.status === "playing" || s.status === "finished" || s.status === "roundEnd" || s.status === "winnerShow") screen = "game"; if (s.status === "lobby") screen = "lobby"; render(); });
 socket.on("errorMsg", function (m) { err = m; render(); });
 socket.on("drawnPlayable", function () { drawnChoice = true; render(); });
-function esc(s) { return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function esc(s) { return String(s == null ? "" : s).replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,"""); }
 function canPlay(card, top, chosenColor, stackKind) {
   if (!card) return false; if (!top) return true;
   if (stackKind === "draw2") return card.type === "draw2";
@@ -24,7 +24,7 @@ function canPlay(card, top, chosenColor, stackKind) {
 }
 function corner(t) { return "<span class=\"c-tl\">" + t + "</span><span class=\"c-br\">" + t + "</span>"; }
 function cardHtml(c, extra, idx) {
-  extra = extra || ""; var click = idx == null ? "" : (" onclick=\"tryPlay(" + idx + ")\""); var mid = "", cor = "";
+  extra = extra || ""; var click = (idx == null || String(extra).indexOf("ok") < 0) ? "" : (" onclick=\"tryPlay(" + idx + ")\""); var mid = "", cor = "";
   if (c.type === "number") { cor = corner(String(c.value)); mid = "<div class=\"oval\"><span class=\"oval-n\">" + c.value + "</span></div>"; }
   else if (c.type === "skip") { cor = corner("X"); mid = "<div class=\"oval\"><div class=\"skip-ring mark\"></div></div>"; }
   else if (c.type === "reverse") { cor = corner("R"); mid = "<div class=\"oval\"><div class=\"rev mark\">R</div></div>"; }
@@ -155,7 +155,7 @@ function game() {
   var html = "<div class=\"row\" style=\"border:0\"><strong>Oda " + esc(state.code) + "</strong><span class=\"badge\">Tur " + (state.roundNow || 1) + "/" + (state.roundsTotal || 1) + "</span></div>";
   if (g.noticeYou) html += "<div class=\"panel warn\">" + esc(g.noticeYou) + "</div>";
   else if (g.notice) html += "<div class=\"panel warn\">" + esc(g.notice) + "</div>";
-  if (state.paused) html += "<div class=\"panel warn\">Kopan oyuncu donmeli.</div>";
+  if (state.paused) html += "<div class=\"panel warn\">Siradaki oyuncu koptu, ayni ad ile donmeli.</div>";
   if (g.plusStack) html += "<div class=\"panel warn\">Ceza yigini: " + g.plusStack + "</div>";
   html += "<p class=\"msg\">" + esc(g.lastAction || "") + "</p>" + tableHtml();
   html += "<div class=\"hand\">" + (g.hand || []).map(function (c, idx) {
@@ -172,7 +172,7 @@ function game() {
     html += "<button style=\"background:var(--blue)\" onclick=\"confirmWild('blue')\">Mavi</button></div></div>";
   }
   if (pendingCustom && pendingCustom.color) html += assignPanel();
-  if (drawnChoice && myTurn && !g.plusStack && !(g.drawQueue && g.drawQueue.length)) {
+  if ((drawnChoice || g.canPass) && myTurn && !g.plusStack && !(g.drawQueue && g.drawQueue.length)) {
     html += "<div class=\"panel\"><p>Cektigin karti oynayabilirsin.</p><button class=\"btn btn-main\" onclick=\"playDrawn()\">Oyna</button><button class=\"btn btn-ghost\" onclick=\"passDrawn()\">Pas</button></div>";
   }
   html += "<p class=\"err\">" + esc(err) + "</p>" + ver();
