@@ -8,7 +8,7 @@ socket.on("connect", function () {
 setInterval(function () { try { fetch("/health"); socket.emit("ping"); } catch (e) {} }, 180000);
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V10";
+const VERSION = "V11";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
 let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); if (d.code) localStorage.setItem("uno_code", d.code); screen = "lobby"; err = ""; render(); });
@@ -148,13 +148,20 @@ function tableHtml() {
 function assignPanel() {
   var others = state.players.filter(function (p) { return p.id !== me.playerId; });
   var sum = 0; others.forEach(function (p) { sum += assignMap[p.id] || 0; });
-  var h = "<div class=\"panel\"><p>8 cezayi dagit (" + sum + " / 8)</p>";
+  var col = pendingCustom && pendingCustom.color;
+  var h = "<div class=\"panel\"><p>Ozel 8 atildi. Renk sec ve 8 cezayi dagit (" + sum + " / 8)</p>";
+  h += "<div class=\"colors\">";
+  h += "<button style=\"background:var(--red)\" onclick=\"confirmWild('red')\">Kirmizi</button>";
+  h += "<button style=\"background:var(--yellow);color:#222\" onclick=\"confirmWild('yellow')\">Sari</button>";
+  h += "<button style=\"background:var(--green)\" onclick=\"confirmWild('green')\">Yesil</button>";
+  h += "<button style=\"background:var(--blue)\" onclick=\"confirmWild('blue')\">Mavi</button></div>";
+  if (col) h += "<p>Secilen renk: " + (COLOR_TR[col]||col) + "</p>";
   others.forEach(function (p) {
     var v = assignMap[p.id] || 0;
     h += "<div class=\"row\"><span>" + esc(p.name) + "</span><span><button class=\"mini-btn\" onclick=\"chgAs('" + p.id + "',-1)\">-</button> " + v + " <button class=\"mini-btn\" onclick=\"chgAs('" + p.id + "',1)\">+</button></span></div>";
   });
-  h += "<button class=\"btn btn-main\" " + (sum === 8 ? "" : "disabled") + " onclick=\"confirmCustom()\">Dagit ve at</button>";
-  h += "<button class=\"btn btn-ghost\" onclick=\"pendingCustom=null;pendingWild=null;render()\">Vazgec</button></div>";
+  h += "<button class=\"btn btn-main\" " + (sum === 8 && col ? "" : "disabled") + " onclick=\"confirmCustom()\">Tamam</button>";
+  h += "<button class=\"btn btn-ghost\" onclick=\"pendingCustom=null;pendingWild=null;assignMap={};render()\">Vazgec</button></div>";
   return h;
 }
 function game() {
@@ -189,7 +196,7 @@ function game() {
   html += "<div class=\"actions\">";
   html += "<button class=\"btn " + (drawOn ? "btn-draw" : "btn-ghost") + "\" " + (drawOn ? "" : "disabled") + " onclick=\"socket.emit('draw')\">Kart cek</button>";
   html += "<button class=\"btn btn-ghost\" " + (canPass ? "" : "disabled") + " onclick=\"passDrawn()\">Pas</button>";
-  html += "<button class=\"btn btn-main\" onclick=\"socket.emit('uno')\">UNO!</button>";
+  html += "<button class=\"btn btn-main\" onclick=\"pressUno()\">UNO!</button>";
   html += "<button class=\"btn btn-ghost\" onclick=\"showScores=true;render()\">Skor</button>";
   html += "</div>";
   if (pendingWild !== null && !pendingCustom) {
@@ -199,7 +206,7 @@ function game() {
     html += "<button style=\"background:var(--green)\" onclick=\"confirmWild('green')\">Yesil</button>";
     html += "<button style=\"background:var(--blue)\" onclick=\"confirmWild('blue')\">Mavi</button></div></div>";
   }
-  if (pendingCustom && pendingCustom.color) html += assignPanel();
+  if (pendingCustom) html += assignPanel();
   if ((drawnChoice || g.canPass) && myTurn && !g.plusStack && !(g.drawQueue && g.drawQueue.length)) {
     html += "<div class=\"panel warn\">Cektigin karti oynayabilirsin veya Pas.</div>";
   }
@@ -241,6 +248,21 @@ function confirmCustom() {
   socket.emit("play", { cardIndex: pendingCustom.i, chosenColor: pendingCustom.color, assign: assign });
   pendingCustom = null; assignMap = {}; pendingWild = null;
 }
+function shoutUno() {
+  try {
+    if (window.speechSynthesis) {
+      var u = new SpeechSynthesisUtterance("UNOOOO");
+      u.lang = "tr-TR"; u.rate = 0.85; u.pitch = 1.15; u.volume = 1;
+      window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+    }
+  } catch (e) {}
+}
+function pressUno() {
+  var n = state && state.game && state.game.hand ? state.game.hand.length : 0;
+  socket.emit("uno");
+  if (n === 2) shoutUno();
+}
+socket.on("unoShout", function () { shoutUno(); });
 function playDrawn() { drawnChoice = false; tryPlay(state.game.hand.length - 1); }
 function passDrawn() { drawnChoice = false; socket.emit("passAfterDraw"); }
 function cardsHelp() {
@@ -263,9 +285,15 @@ function backFromCards() {
   else screen = "home";
   err = ""; render();
 }
+function goFull() {
+  var el = document.documentElement;
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.webkitRequestFullScreen;
+  try { if (fn) fn.call(el); } catch (e) {}
+  try { window.scrollTo(0, 1); } catch (e) {}
+}
 function goHome() { screen = "home"; err = ""; render(); }
-function goCreate() { screen = "create"; err = ""; render(); }
-function goJoin() { screen = "join"; err = ""; render(); }
+function goCreate() { goFull(); screen = "create"; err = ""; render(); }
+function goJoin() { goFull(); screen = "join"; err = ""; render(); }
 function doCreate() { var name = document.getElementById("name").value.trim() || "Kurucu"; me.name = name; socket.emit("create", { name: name, maxPlayers: document.getElementById("max").value }); }
 function doJoin() { var name = document.getElementById("name").value.trim() || "Oyuncu"; me.name = name; socket.emit("join", { name: name, code: document.getElementById("code").value.trim(), token: me.token }); }
 render();
