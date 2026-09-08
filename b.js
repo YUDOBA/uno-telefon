@@ -19,8 +19,9 @@ io.on("connection", function (socket) {
   });
   socket.on("join", function (d) {
     d = d || {};
-    const room = rooms.get(normCode(d.code));
-    if (!room) return socket.emit("errorMsg", rooms.size === 0 ? "Sunucu yeni acildi." : "Oda bulunamadi.");
+    let room = rooms.get(normCode(d.code));
+    if (!room) { loadRooms(); room = rooms.get(normCode(d.code)); }
+    if (!room) return socket.emit("errorMsg", "Oda yok. Kurucu sayfayi acik tutsun ve oyunu tekrar kursun. Yeni kodu paylasin.");
     const nm = String(d.name || "Oyuncu").slice(0, 16);
     let existing = room.players.find(function (p) { return d.token && p.token === d.token; });
     if (!existing) existing = room.players.find(function (p) { return !p.connected && p.name === nm; });
@@ -239,6 +240,7 @@ io.on("connection", function (socket) {
     if (!room || room.hostId !== socket.data.playerId) return;
     room.status = "lobby"; room.game = null; room.roundNow = 1; room.scores = {}; emitRoom(room);
   });
+  socket.on("ping", function () {});
   socket.on("disconnect", function () {
     const room = rooms.get(socket.data.roomCode); if (!room) return;
     const p = room.players.find(function (x) { return x.id === socket.data.playerId; });
