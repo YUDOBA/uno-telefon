@@ -10,7 +10,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.get("/health", function (req, res) { res.send("ok"); });
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V10";
+const VERSION = "V14";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
@@ -37,6 +37,15 @@ function makeDeck() {
     deck.push({ color: "black", type: "wild", value: "wild" });
     deck.push({ color: "black", type: "wild4", value: "wild4" });
     deck.push({ color: "black", type: "custom", value: "custom" });
+    deck.push({ color: "black", type: "wdraw2", value: "wdraw2" });
+    deck.push({ color: "black", type: "wtarget2", value: "wtarget2" });
+    deck.push({ color: "black", type: "wskip2", value: "wskip2" });
+    deck.push({ color: "black", type: "swap", value: "swap" });
+    deck.push({ color: "black", type: "shuffle", value: "shuffle" });
+    deck.push({ color: "black", type: "skipall", value: "skipall" });
+  }
+  for (const color of COLORS) {
+    deck.push({ color: color, type: "flip", value: "flip" });
   }
   return shuffle(deck);
 }
@@ -48,6 +57,13 @@ function cardLabel(c) {
   if (c.type === "wild") return "Joker";
   if (c.type === "wild4") return "Joker +4";
   if (c.type === "custom") return "Ozel Joker (8)";
+  if (c.type === "wdraw2") return "Joker +2";
+  if (c.type === "wtarget2") return "Hedef +2";
+  if (c.type === "wskip2") return "Cift Atla";
+  if (c.type === "swap") return "El Degis";
+  if (c.type === "shuffle") return "El Karistir";
+  if (c.type === "flip") return (COLOR_TR[c.color] || "") + " Cevir";
+  if (c.type === "skipall") return "Herkesi Atla";
   return "?";
 }
 function cardPts(c) {
@@ -57,9 +73,10 @@ function cardPts(c) {
 function canPlay(card, top, chosenColor, stackKind) {
   if (!top) return true;
   if (stackKind === "draw2") return card.type === "draw2";
-  if (stackKind === "wild4" || stackKind === "custom") return false;
-  if (card.type === "wild" || card.type === "custom") return true;
+  if (stackKind === "wild4" || stackKind === "custom" || stackKind === "wdraw2") return false;
+  if (card.type === "wild" || card.type === "custom" || card.type === "wdraw2" || card.type === "wtarget2" || card.type === "wskip2" || card.type === "swap" || card.type === "shuffle" || card.type === "skipall") return true;
   if (card.type === "wild4") return top.type === "number" || top.type === "wild" || top.type === "wild4" || top.type === "custom";
+  if (card.type === "flip" && top.type === "flip") return true;
   const color = top.color === "black" ? chosenColor : top.color;
   if (card.color === color) return true;
   if (card.type === "number" && top.type === "number" && card.value === top.value) return true;
