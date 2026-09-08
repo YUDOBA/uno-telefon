@@ -8,7 +8,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.static(path.join(__dirname, "public")));
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V1";
+const VERSION = "V2";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
@@ -46,16 +46,18 @@ function cardLabel(c) {
   if (c.type === "wild4") return "Joker +4";
   return "?";
 }
-function canPlay(card, top, chosenColor) {
+function canPlay(card, top, chosenColor, stackKind) {
   if (!top) return true;
-  if (card.type === "wild" || card.type === "wild4") return true;
+  if (stackKind === "draw2") return card.type === "draw2";
+  if (stackKind === "wild4") return false;
+  if (card.type === "wild") return true;
+  if (card.type === "wild4") return top.type === "number" || top.type === "wild" || top.type === "wild4";
   const color = top.color === "black" ? chosenColor : top.color;
   if (card.color === color) return true;
   if (card.type === "number" && top.type === "number" && card.value === top.value) return true;
   if (card.type !== "number" && card.type === top.type && card.color !== "black") return true;
   return false;
 }
-function hasMatchingColor(hand, color) { return hand.some(function (c) { return c.color === color; }); }
 const rooms = new Map();
 function normCode(v) { return String(v || "").replace(/\D/g, ""); }
 function codeGen() {
@@ -78,7 +80,7 @@ function nextSeat(room, fromId, skipOne) {
 }
 function publicRoom(room, viewerId) {
   const g = room.game;
-  const actor = g && g.drawQueue && g.drawQueue.length ? g.drawQueue[0].playerId : (g ? g.currentId : null);
+  const actor = g ? g.currentId : null;
   return {
     version: VERSION, code: room.code, maxPlayers: room.maxPlayers, hostId: room.hostId, status: room.status,
     paused: !!(g && anyoneOffline(room) && room.status === "playing"),
@@ -93,7 +95,8 @@ function publicRoom(room, viewerId) {
     game: g ? {
       top: g.discard[g.discard.length - 1], chosenColor: g.chosenColor, direction: g.direction,
       currentId: g.currentId, actorId: actor, winnerId: g.winnerId, lastAction: g.lastAction,
-      hand: g.hands[viewerId] || [], deckCount: g.deck.length, drawQueue: g.drawQueue || []
+      hand: g.hands[viewerId] || [], deckCount: g.deck.length,
+      plusStack: g.plusStack || 0, stackKind: g.stackKind || null
     } : null
   };
 }
@@ -132,7 +135,7 @@ function startGame(room) {
   room.game = {
     deck: deck, discard: [first], hands: hands, currentId: room.seats[0], direction: 1,
     chosenColor: first.color === "black" ? COLORS[Math.floor(Math.random() * 4)] : first.color,
-    saidUno: {}, winnerId: null, drawQueue: [],
+    saidUno: {}, winnerId: null, plusStack: 0, stackKind: null,
     lastAction: "Oyun basladi. Ust kart: " + cardLabel(first)
   };
   room.status = "playing";
