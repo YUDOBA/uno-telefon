@@ -35,7 +35,6 @@ function shuffle(arr) {
   }
   return a;
 }
-function cardKey(c) { return c.color + "-" + c.type + "-" + c.value; }
 function cardLabel(c) {
   if (c.type === "number") return (COLOR_TR[c.color] || c.color) + " " + c.value;
   if (c.type === "skip") return COLOR_TR[c.color] + " Atla";
@@ -56,11 +55,12 @@ function canPlay(card, top, chosenColor) {
 }
 function hasMatchingColor(hand, color) { return hand.some((c) => c.color === color); }
 const rooms = new Map();
+function normCode(v) {
+  return String(v || "").replace(/\D/g, "");
+}
 function codeGen() {
-  let code = "";
-  for (let i = 0; i < 4; i++) code += String(Math.floor(Math.random() * 10));
-  if (code === "0000" || rooms.has(code)) return codeGen();
-  return code;
+  const code = String(1000 + Math.floor(Math.random() * 9000));
+  return rooms.has(code) ? codeGen() : code;
 }
 function publicRoom(room, viewerId) {
   const g = room.game;
@@ -107,6 +107,7 @@ function drawCards(game, playerId, n) {
       if (!game.deck.length) break;
     }
     const c = game.deck.pop();
+    if (!game.hands[playerId]) game.hands[playerId] = [];
     game.hands[playerId].push(c);
     taken.push(c);
   }
@@ -161,9 +162,13 @@ io.on("connection", (socket) => {
     emitRoom(room);
   });
   socket.on("join", ({ code, name }) => {
-    const raw = String(code || "").replace(/\s/g, "");
-    const room = rooms.get(raw) || rooms.get(raw.toUpperCase());
-    if (!room) return socket.emit("errorMsg", "Oda bulunamadi.");
+    const raw = normCode(code);
+    const room = rooms.get(raw);
+    if (!room) {
+      return socket.emit("errorMsg", rooms.size === 0
+        ? "Sunucu yeni acildi veya oda silindi. Kurucu yeni oda acsin."
+        : "Oda bulunamadi. 4 haneli kodu kontrol et (" + raw + ").");
+    }
     if (room.status !== "lobby") return socket.emit("errorMsg", "Oyun zaten basladi.");
     if (room.players.length >= room.maxPlayers) return socket.emit("errorMsg", "Oda dolu.");
     const playerId = socket.id;
@@ -277,7 +282,7 @@ io.on("connection", (socket) => {
     const room = rooms.get(socket.data.roomCode);
     if (!room || !room.game) return;
     const pid = socket.data.playerId;
-    if (room.game.hands[pid].length <= 2) {
+    if (room.game.hands[pid] && room.game.hands[pid].length <= 2) {
       room.game.saidUno[pid] = true;
       room.game.lastAction = nameOf(room, pid) + ": UNO!";
       emitRoom(room);
@@ -298,14 +303,6 @@ io.on("connection", (socket) => {
     if (!room) return;
     const p = room.players.find((x) => x.id === pid);
     if (p) { p.connected = false; p.socketId = null; }
-    if (room.status === "lobby") {
-      room.players = room.players.filter((x) => x.id !== pid);
-      if (!room.players.length) { rooms.delete(code); return; }
-      if (room.hostId === pid) room.hostId = room.players[0].id;
-    } else if (room.game && room.game.currentId === pid && !room.game.winnerId) {
-      room.game.lastAction = (p ? p.name : "Oyuncu") + " koptu.";
-      room.game.currentId = nextAlive(room, pid, false);
-    }
     emitRoom(room);
   });
 });
