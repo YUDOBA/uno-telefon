@@ -8,7 +8,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.static(path.join(__dirname, "public")));
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V3";
+const VERSION = "V4";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
@@ -47,6 +47,10 @@ function cardLabel(c) {
   if (c.type === "wild4") return "Joker +4";
   if (c.type === "custom") return "Ozel Joker (8)";
   return "?";
+}
+function cardPts(c) {
+  if (c.type === "number") return Number(c.value) || 0;
+  return 10;
 }
 function canPlay(card, top, chosenColor, stackKind) {
   if (!top) return true;
@@ -88,11 +92,14 @@ function publicRoom(room, viewerId) {
     version: VERSION, code: room.code, maxPlayers: room.maxPlayers, hostId: room.hostId, status: room.status,
     paused: !!(g && anyoneOffline(room) && room.status === "playing"),
     seats: room.seats || room.players.map(function (p) { return p.id; }),
+    roundsTotal: room.roundsTotal || 1, roundNow: room.roundNow || 1,
+    scores: room.scores || {}, lastRoundPts: room.lastRoundPts || {},
     players: room.players.map(function (p) {
       return {
         id: p.id, name: p.name, connected: p.connected,
-        cardCount: g && g.hands[p.id] ? g.hands[p.id].length : 0,
-        saidUno: g ? !!g.saidUno[p.id] : false, isTurn: actor === p.id
+        cardCount: g && g.hands && g.hands[p.id] ? g.hands[p.id].length : 0,
+        saidUno: g ? !!g.saidUno[p.id] : false, isTurn: actor === p.id,
+        score: (room.scores && room.scores[p.id]) || 0
       };
     }),
     game: g ? {
@@ -136,12 +143,41 @@ function startGame(room) {
   }
   let first = deck.pop();
   while (first && (first.type === "wild4" || first.type === "custom")) { deck.unshift(first); first = deck.pop(); }
-  room.seats = shuffle(room.players.map(function (p) { return p.id; }));
+  if (!room.seats || room.seats.length !== room.players.length) {
+    room.seats = room.players.map(function (p) { return p.id; });
+  }
+  room.seats = room.seats.filter(function (id) { return room.players.some(function (p) { return p.id === id; }); });
+  room.players.forEach(function (p) { if (room.seats.indexOf(p.id) < 0) room.seats.push(p.id); });
+  if (!room.scores) room.scores = {};
+  room.players.forEach(function (p) { if (room.scores[p.id] == null) room.scores[p.id] = 0; });
   room.game = {
     deck: deck, discard: [first], hands: hands, currentId: room.seats[0], direction: 1,
     chosenColor: first.color === "black" ? COLORS[Math.floor(Math.random() * 4)] : first.color,
     saidUno: {}, winnerId: null, plusStack: 0, stackKind: null, drawQueue: [], notice: "", noticeYou: {},
-    lastAction: "Oyun basladi. Ust kart: " + cardLabel(first)
+    lastAction: "Tur " + room.roundNow + "/" + room.roundsTotal + " basladi. Ust: " + cardLabel(first)
   };
   room.status = "playing";
+}
+function endRound(room, winnerId) {
+  const g = room.game;
+  const last = {};
+  room.players.forEach(function (p) {
+    const hand = (g.hands[p.id] || []);
+    let pts = 0;
+    hand.forEach(function (c) { pts += cardPts(c); });
+    last[p.id] = pts;
+    room.scores[p.id] = (room.scores[p.id] || 0) + pts;
+  });
+  if (winnerId) room.scores[winnerId] = (room.scores[winnerId] || 0) - 10;
+  room.lastRoundPts = last;
+  room.lastWinnerId = winnerId;
+  if (room.roundNow >= room.roundsTotal) {
+    room.status = "finished";
+    g.winnerId = winnerId;
+    g.lastAction = "Oyun bitti. En dusuk puan kazanir.";
+  } else {
+    room.status = "roundEnd";
+    g.winnerId = winnerId;
+    g.lastAction = "Tur " + room.roundNow + " bitti. " + nameOf(room, winnerId) + " turu aldi (-10).";
+  }
 }
