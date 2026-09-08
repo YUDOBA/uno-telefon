@@ -8,7 +8,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.static(path.join(__dirname, "public")));
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V4";
+const VERSION = "V5";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
@@ -94,6 +94,8 @@ function publicRoom(room, viewerId) {
     seats: room.seats || room.players.map(function (p) { return p.id; }),
     roundsTotal: room.roundsTotal || 1, roundNow: room.roundNow || 1,
     scores: room.scores || {}, lastRoundPts: room.lastRoundPts || {},
+    lastWinnerId: room.lastWinnerId || null, gameOver: !!room.gameOver,
+    readyNext: room.readyNext || {}, sawScores: room.sawScores || {},
     players: room.players.map(function (p) {
       return {
         id: p.id, name: p.name, connected: p.connected,
@@ -150,6 +152,7 @@ function startGame(room) {
   room.players.forEach(function (p) { if (room.seats.indexOf(p.id) < 0) room.seats.push(p.id); });
   if (!room.scores) room.scores = {};
   room.players.forEach(function (p) { if (room.scores[p.id] == null) room.scores[p.id] = 0; });
+  room.readyNext = {}; room.sawScores = {}; room.gameOver = false;
   room.game = {
     deck: deck, discard: [first], hands: hands, currentId: room.seats[0], direction: 1,
     chosenColor: first.color === "black" ? COLORS[Math.floor(Math.random() * 4)] : first.color,
@@ -171,13 +174,9 @@ function endRound(room, winnerId) {
   if (winnerId) room.scores[winnerId] = (room.scores[winnerId] || 0) - 10;
   room.lastRoundPts = last;
   room.lastWinnerId = winnerId;
-  if (room.roundNow >= room.roundsTotal) {
-    room.status = "finished";
-    g.winnerId = winnerId;
-    g.lastAction = "Oyun bitti. En dusuk puan kazanir.";
-  } else {
-    room.status = "roundEnd";
-    g.winnerId = winnerId;
-    g.lastAction = "Tur " + room.roundNow + " bitti. " + nameOf(room, winnerId) + " turu aldi (-10).";
-  }
+  room.readyNext = {};
+  room.sawScores = {};
+  room.gameOver = room.roundNow >= room.roundsTotal;
+  room.status = "winnerShow";
+  if (g) { g.winnerId = winnerId; g.lastAction = room.gameOver ? "Oyun bitti." : ("Tur " + room.roundNow + " bitti."); }
 }
