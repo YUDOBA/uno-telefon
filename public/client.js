@@ -8,9 +8,9 @@ socket.on("connect", function () {
 setInterval(function () { try { fetch("/health"); socket.emit("ping"); } catch (e) {} }, 180000);
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V11";
+const VERSION = "V12";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
-let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false;
+let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false, picked = null, flying = null, iSaidUno = false;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); if (d.code) localStorage.setItem("uno_code", d.code); screen = "lobby"; err = ""; render(); });
 socket.on("joined", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); if (d.code) localStorage.setItem("uno_code", d.code); screen = "lobby"; err = ""; render(); });
 socket.on("state", function (s) { state = s; if (s.status === "playing" || s.status === "finished" || s.status === "roundEnd" || s.status === "winnerShow") screen = "game"; if (s.status === "lobby") screen = "lobby"; render(); });
@@ -38,7 +38,7 @@ function canPlay(card, top, chosenColor, stackKind) {
 }
 function corner(t) { return "<span class=\"c-tl\">" + t + "</span><span class=\"c-br\">" + t + "</span>"; }
 function cardHtml(c, extra, idx) {
-  extra = extra || ""; var click = (idx == null || String(extra).indexOf("ok") < 0) ? "" : (" onclick=\"tryPlay(" + idx + ")\""); var mid = "", cor = "";
+  extra = extra || ""; var click = (idx == null) ? "" : (" onclick=\"tryPick(" + idx + ")\""); var mid = "", cor = "";
   if (c.type === "number") { cor = corner(String(c.value)); mid = "<div class=\"oval\"><span class=\"oval-n\">" + c.value + "</span></div>"; }
   else if (c.type === "skip") { cor = corner("X"); mid = "<div class=\"oval\"><div class=\"skip-ring mark\"></div></div>"; }
   else if (c.type === "reverse") { cor = corner("R"); mid = "<div class=\"oval\"><div class=\"rev mark\">R</div></div>"; }
@@ -129,6 +129,7 @@ function tableHtml() {
   html += "<div class=\"felt\">";
   html += clockwise ? "<div class=\"dir-arrow\">&#8635; Saat</div>" : "<div class=\"dir-arrow revd\">&#8634; Ters</div>";
   html += (g0.top ? cardHtml(g0.top, "") : "");
+  html += "<div class=\"deck-left\">Kalan " + (g0.deckCount != null ? g0.deckCount : "?") + "</div>";
   if (colorName) html += "<div class=\"color-name col-"+g0.chosenColor+"\">"+colorName+"</div>";
   html += "</div>";
   for (var i = 0; i < n; i++) {
@@ -189,8 +190,18 @@ function game() {
   if (g.plusStack) html += "<div class=\"panel warn\">Ceza yigini: " + g.plusStack + "</div>";
   html += "<p class=\"msg\">" + esc(g.lastAction || "") + "</p>" + tableHtml();
   html += "<div class=\"hand\">" + (g.hand || []).map(function (c, idx) {
-    return cardHtml(c, myTurn && canPlay(c, g.top, g.chosenColor, g.stackKind) ? "ok" : "off", idx);
+    var cls = "";
+    if (myTurn && canPlay(c, g.top, g.chosenColor, g.stackKind)) cls += " ok";
+    else cls += " off";
+    if (picked === idx) cls += " picked";
+    return cardHtml(c, cls, idx);
   }).join("") + "</div>";
+  if (picked != null && g.hand && g.hand[picked]) {
+    html += "<div class=\"peek\" onclick=\"tryPick(" + picked + ")\">" + cardHtml(g.hand[picked], "lg", null) + "<p class=\"sub\">Tekrar basarak at</p></div>";
+  }
+  if (flying) {
+    html += "<div class=\"flywrap\"><div class=\"flycard\">" + cardHtml(flying, "lg", null) + "</div></div>";
+  }
   var canPass = !!(drawnChoice || g.canPass) && myTurn && !g.plusStack && !(g.drawQueue && g.drawQueue.length);
   var drawOn = myTurn && !state.paused;
   html += "<div class=\"actions\">";
@@ -224,13 +235,23 @@ function doStart() {
   var r = document.getElementById("rounds");
   socket.emit("start", { rounds: r ? r.value : 3 });
 }
+function tryPick(i) {
+  err = ""; if (!state || !state.game) return;
+  var card = state.game.hand[i]; if (!card) return;
+  if (picked !== i) { picked = i; render(); return; }
+  tryPlay(i);
+}
 function tryPlay(i) {
   err = ""; if (!state || !state.game) return;
   if (state.paused) { err = "Oyun bekliyor."; render(); return; }
   var card = state.game.hand[i]; if (!card) return;
   if (!isActor()) { err = "Sira sende degil."; render(); return; }
-  if (card.type === "custom") { pendingCustom = { i: i, color: null }; pendingWild = i; render(); return; }
-  if (card.type === "wild" || card.type === "wild4") { pendingWild = i; render(); return; }
+  if (card.type === "custom") { pendingCustom = { i: i, color: null }; pendingWild = i; picked = null; render(); return; }
+  if (card.type === "wild" || card.type === "wild4") { pendingWild = i; picked = null; render(); return; }
+  if (!canPlay(card, state.game.top, state.game.chosenColor, state.game.stackKind)) {
+    err = "Bu kart oynanamaz."; render(); return;
+  }
+  picked = null;
   socket.emit("play", { cardIndex: i });
 }
 function confirmWild(color) {
@@ -259,10 +280,20 @@ function shoutUno() {
 }
 function pressUno() {
   var n = state && state.game && state.game.hand ? state.game.hand.length : 0;
+  if (n === 2) { iSaidUno = true; shoutUno(); }
   socket.emit("uno");
-  if (n === 2) shoutUno();
 }
-socket.on("unoShout", function () { shoutUno(); });
+socket.on("unoShout", function () {
+  if (iSaidUno) { iSaidUno = false; return; }
+  shoutUno();
+  try { if (navigator.vibrate) navigator.vibrate([400,120,400,120,400,120,400]); } catch (e) {}
+});
+socket.on("cardFly", function (d) {
+  if (!d || !d.card) return;
+  flying = d.card;
+  render();
+  setTimeout(function () { flying = null; render(); }, 2000);
+});
 function playDrawn() { drawnChoice = false; tryPlay(state.game.hand.length - 1); }
 function passDrawn() { drawnChoice = false; socket.emit("passAfterDraw"); }
 function cardsHelp() {
