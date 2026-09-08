@@ -65,41 +65,18 @@ io.on("connection", function (socket) {
     const g = room.game;
     const pid = socket.data.playerId;
     if (g.winnerId) return;
-    if (g.drawQueue && g.drawQueue.length) return socket.emit("errorMsg", "Once ceza kartlari cekilmeli.");
     if (g.currentId !== pid) return socket.emit("errorMsg", "Sira sende degil.");
     const hand = g.hands[pid];
     const card = hand[d.cardIndex];
     if (!card) return;
     const top = g.discard[g.discard.length - 1];
-    if (!canPlay(card, top, g.chosenColor)) return socket.emit("errorMsg", "Bu kart oynanamaz.");
-    if (card.type === "wild4") {
-      const colorNow = top.color === "black" ? g.chosenColor : top.color;
-      if (colorNow && hasMatchingColor(hand.filter(function (_, i) { return i !== d.cardIndex; }), colorNow))
-        return socket.emit("errorMsg", "+4 sadece o renkte kartin yoksa atilir.");
-    }
+    if (!canPlay(card, top, g.chosenColor, g.stackKind)) return socket.emit("errorMsg", "Bu kart oynanamaz.");
     if ((card.type === "wild" || card.type === "wild4") && COLORS.indexOf(d.chosenColor) < 0)
       return socket.emit("errorMsg", "Renk sec.");
-    const penalty = card.type === "draw2" ? 2 : (card.type === "wild4" ? 4 : 0);
-    let queue = [];
-    if (penalty) {
-      const others = room.players.filter(function (p) { return p.id !== pid; });
-      if (!d.assign || !d.assign.length) queue = [{ playerId: nextSeat(room, pid, false), left: penalty }];
-      else {
-        let sum = 0;
-        for (let i = 0; i < d.assign.length; i++) {
-          const a = d.assign[i];
-          const n = Math.max(0, parseInt(a.n, 10) || 0);
-          if (!n) continue;
-          if (!others.some(function (o) { return o.id === a.playerId; })) continue;
-          queue.push({ playerId: a.playerId, left: n });
-          sum += n;
-        }
-        if (sum !== penalty) return socket.emit("errorMsg", "Toplam ceza " + penalty + " olmali.");
-      }
-    }
     hand.splice(d.cardIndex, 1);
     g.discard.push(card);
-    g.chosenColor = card.color === "black" ? d.chosenColor : card.color;
+    if (card.color === "black") g.chosenColor = d.chosenColor;
+    else g.chosenColor = card.color;
     if (hand.length === 1 && !g.saidUno[pid]) {
       drawCards(g, pid, 2);
       g.lastAction = nameOf(room, pid) + " UNO demedi, 2 kart cekti.";
@@ -117,14 +94,24 @@ io.on("connection", function (socket) {
     if (card.type === "reverse") {
       if (two) skip = true; else g.direction *= -1;
     }
-    if (penalty) {
-      g.drawQueue = queue;
-      g.afterDrawTo = nextSeat(room, pid, false);
-      const parts = queue.map(function (q) { return nameOf(room, q.playerId) + " +" + q.left; }).join(", ");
-      g.lastAction = nameOf(room, pid) + " " + cardLabel(card) + " atti. Ceza: " + parts;
+    if (card.type === "draw2") {
+      g.plusStack = (g.stackKind === "draw2" ? (g.plusStack || 0) : 0) + 2;
+      g.stackKind = "draw2";
+      g.currentId = nextSeat(room, pid, false);
+      g.lastAction = nameOf(room, pid) + " +2 atti. Yigin " + g.plusStack + ". Renk: " + (COLOR_TR[g.chosenColor] || "");
       emitRoom(room);
       return;
     }
+    if (card.type === "wild4") {
+      g.plusStack = 4;
+      g.stackKind = "wild4";
+      g.currentId = nextSeat(room, pid, false);
+      g.lastAction = nameOf(room, pid) + " +4 atti. Sıradaki 4 kart cekecek.";
+      emitRoom(room);
+      return;
+    }
+    g.plusStack = 0;
+    g.stackKind = null;
     if (card.type === "wild") g.lastAction = nameOf(room, pid) + " Joker atti.";
     else if (card.type === "skip") g.lastAction = nameOf(room, pid) + " Atla atti.";
     else if (card.type === "reverse") g.lastAction = nameOf(room, pid) + " yon degisti.";
@@ -139,25 +126,24 @@ io.on("connection", function (socket) {
     const g = room.game;
     const pid = socket.data.playerId;
     if (g.winnerId) return;
-    if (g.drawQueue && g.drawQueue.length) {
-      const q = g.drawQueue[0];
-      if (q.playerId !== pid) return socket.emit("errorMsg", "Ceza cekme sirasi baska oyuncuda.");
+    if (g.currentId !== pid) return socket.emit("errorMsg", "Sira sende degil.");
+    if (g.plusStack && g.plusStack > 0) {
       drawCards(g, pid, 1);
-      q.left -= 1;
-      g.lastAction = nameOf(room, pid) + " 1 ceza karti cekti. Kalan: " + q.left;
-      if (q.left <= 0) g.drawQueue.shift();
-      if (!g.drawQueue.length) {
-        g.currentId = g.afterDrawTo || nextSeat(room, pid, false);
+      g.plusStack -= 1;
+      g.lastAction = nameOf(room, pid) + " ceza cekti. Kalan " + g.plusStack;
+      if (g.plusStack <= 0) {
+        g.plusStack = 0;
+        g.stackKind = null;
+        g.currentId = nextSeat(room, pid, false);
         g.lastAction += " Ceza bitti.";
       }
       emitRoom(room);
       return;
     }
-    if (g.currentId !== pid) return socket.emit("errorMsg", "Sira sende degil.");
     const top = g.discard[g.discard.length - 1];
     const taken = drawCards(g, pid, 1);
     const drawn = taken[0];
-    if (drawn && canPlay(drawn, top, g.chosenColor)) {
+    if (drawn && canPlay(drawn, top, g.chosenColor, null)) {
       g.pendingDrawn = { playerId: pid, card: drawn };
       g.lastAction = nameOf(room, pid) + " kart cekti, oynayabilir.";
       emitRoom(room);
