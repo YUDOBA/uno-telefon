@@ -1,7 +1,7 @@
 const socket = io();
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V7";
+const VERSION = "V8";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
 let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); screen = "lobby"; err = ""; render(); });
@@ -46,6 +46,7 @@ function isActor() { return state && state.game && state.game.currentId === me.p
 function render() {
   try {
     if (screen === "home") return home();
+    if (screen === "cards") return cardsHelp();
     if (screen === "create") return create();
     if (screen === "join") return join();
     if (screen === "lobby") return lobby();
@@ -53,7 +54,7 @@ function render() {
   } catch (e) { app.innerHTML = "<p class='err'>" + esc(e.message) + "</p>"; }
 }
 function ver() { return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon " + VERSION + "</p>"; }
-function home() { app.innerHTML = "<div class=\"logo\">UNO</div><p class=\"sub\" style=\"text-align:center\">Telefonlardan kodla katil</p><button class=\"btn btn-main\" onclick=\"goCreate()\">Oyun kur</button><button class=\"btn btn-ghost\" onclick=\"goJoin()\">Koda katil</button><p class=\"err\">" + esc(err) + "</p>" + ver(); }
+function home() { app.innerHTML = "<div class=\"logo\">UNO</div><p class=\"sub\" style=\"text-align:center\">Telefonlardan kodla katil</p><button class=\"btn btn-main\" onclick=\"goCreate()\">Oyun kur</button><button class=\"btn btn-ghost\" onclick=\"goJoin()\">Koda katil</button><button class=\"btn btn-ghost\" onclick=\"goCards()\">Ozel kartlar</button><p class=\"err\">" + esc(err) + "</p>" + ver(); }
 function create() { app.innerHTML = "<h1>Oyun kur</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Toplam oyuncu</label><select id=\"max\"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select><button class=\"btn btn-main\" onclick=\"doCreate()\">Kur ve kod al</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
 function join() { app.innerHTML = "<h1>Oyuna katil / geri don</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Oyun kodu</label><input id=\"code\" maxlength=\"6\" inputmode=\"numeric\" /><button class=\"btn btn-main\" onclick=\"doJoin()\">Katil</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
 function lobby() {
@@ -76,6 +77,7 @@ function lobby() {
     html += "</select></div>";
     html += "<button class=\"btn btn-main\" " + (state.players.length < 2 ? "disabled" : "") + " onclick=\"doStart()\">Oyunu baslat</button>";
   } else html += "<p class=\"sub\">Kurucu sirayi ayarlar ve baslatir.</p>";
+  html += "<button class=\"btn btn-ghost\" onclick=\"goCards()\">Ozel kartlar</button>";
   html += "<p class=\"err\">" + esc(err) + "</p>" + ver();
   app.innerHTML = html;
 }
@@ -222,6 +224,26 @@ function confirmCustom() {
 }
 function playDrawn() { drawnChoice = false; tryPlay(state.game.hand.length - 1); }
 function passDrawn() { drawnChoice = false; socket.emit("passAfterDraw"); }
+function cardsHelp() {
+  function row(card, title, text) {
+    return "<div class=\"panel guide\">" + cardHtml(card, "") + "<div><b>" + title + "</b><p class=\"sub\">" + text + "</p></div></div>";
+  }
+  var html = "<h1>Ozel kartlar</h1>";
+  html += row({color:"red",type:"skip",value:"skip"}, "Atla (Skip)", "Ayni renk veya baska Atla ustune atilir. Siradaki oyuncu atlanir.");
+  html += row({color:"blue",type:"reverse",value:"reverse"}, "Ters (Reverse)", "Ayni renk veya baska Ters ustune atilir. Akis yonu doner. 2 kiside Atla gibi siradaki atlanir.");
+  html += row({color:"green",type:"draw2",value:"draw2"}, "+2 (Draw Two)", "Ayni renk veya herhangi +2 ustune atilir. Siradaki +2 ceker veya elindeki herhangi renk +2 ile yigini artirir. Son +2 renginden devam.");
+  html += row({color:"black",type:"wild",value:"wild"}, "Joker (Wild)", "Her zaman atilir. Atan yeni rengi secer.");
+  html += row({color:"black",type:"wild4",value:"wild4"}, "Joker +4 (Wild Draw Four)", "Ustte sayi karti veya joker varken atilir. Atla / Ters / +2 ustune atilmaz. Siradaki 4 kart ceker, sonra kart atabilir.");
+  html += row({color:"black",type:"custom",value:"custom"}, "Ozel Joker 8", "Her zaman atilir. Atmadan once toplam 8 cezayi oyunculara dagitirsin. Secilenler sirayla ceker, son ceken kart atabilir.");
+  html += "<button class=\"btn btn-main\" onclick=\"backFromCards()\">Geri</button>" + ver();
+  app.innerHTML = html;
+}
+function goCards() { screen = "cards"; err = ""; render(); }
+function backFromCards() {
+  if (state && (state.status === "lobby")) screen = "lobby";
+  else screen = "home";
+  err = ""; render();
+}
 function goHome() { screen = "home"; err = ""; render(); }
 function goCreate() { screen = "create"; err = ""; render(); }
 function goJoin() { screen = "join"; err = ""; render(); }
