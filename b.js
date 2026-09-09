@@ -309,10 +309,17 @@ io.on("connection", function (socket) {
   socket.on("ping", function () {});
   socket.on("disconnect", function () {
     const room = rooms.get(socket.data.roomCode); if (!room) return;
-    const p = room.players.find(function (x) { return x.id === socket.data.playerId; });
-    if (p) { p.connected = false; p.socketId = null; }
-    if (room.game && room.status === "playing") room.game.lastAction = (p ? p.name : "Oyuncu") + " koptu.";
-    emitRoom(room);
+    const deadId = socket.id;
+    const pid = socket.data.playerId;
+    setTimeout(function () {
+      const r = rooms.get(socket.data.roomCode); if (!r) return;
+      const p = r.players.find(function (x) { return x.id === pid; });
+      if (!p) return;
+      if (p.socketId && p.socketId !== deadId) return;
+      p.connected = false; p.socketId = null;
+      if (r.game && r.status === "playing") r.game.lastAction = (p.name || "Oyuncu") + " koptu.";
+      emitRoom(r);
+    }, 1500);
   });
 });
 const PORT = process.env.PORT || 3000;
