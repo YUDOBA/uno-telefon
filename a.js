@@ -5,12 +5,12 @@ const path = require("path");
 const fs = require("fs");
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, { cors: { origin: "*" }, pingInterval: 10000, pingTimeout: 40000 });
 app.use(express.static(path.join(__dirname, "public")));
 app.get("/health", function (req, res) { res.send("ok"); });
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V15";
+const VERSION = "V21";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
