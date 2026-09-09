@@ -80,10 +80,13 @@ function pressUno() {
   if (n === 2) { iSaidUno = true; shoutUno(); }
   socket.emit("uno");
 }
-socket.on("unoShout", function () {
-  if (iSaidUno) { iSaidUno = false; return; }
-  shoutUno();
+socket.on("unoShout", function (d) {
+  if (iSaidUno) iSaidUno = false;
+  else shoutUno();
   try { if (navigator.vibrate) navigator.vibrate([400,120,400,120,400,120,400]); } catch (e) {}
+  unoBurst = d || {};
+  render();
+  setTimeout(function () { unoBurst = null; render(); }, 1000);
 });
 socket.on("cardFly", function (d) {
   if (!d || !d.card) return;
