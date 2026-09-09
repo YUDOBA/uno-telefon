@@ -117,7 +117,7 @@ io.on("connection", function (socket) {
       io.to(room.code).emit("cardFly", { card: card, fromId: pid });
       if (hand.length === 1 && !g.saidUno[pid]) drawCards(g, pid, 2);
       if (hand.length === 0) { endRound(room, pid); emitRoom(room); return; }
-      g.drawQueue = queue; g.stackKind = "custom"; g.afterDrawTo = pid;
+      g.drawQueue = queue; g.stackKind = "custom"; g.afterDrawTo = nextSeat(room, pid, false);
       const parts = queue.map(function (q) { return nameOf(room, q.playerId) + " " + q.left; }).join(", ");
       const map = {}; map[pid] = "Ozel Joker attin. 8 ceza: " + parts;
       queue.forEach(function (q) { map[q.playerId] = "Sana " + q.left + " kart ceza. Kart cek'e bas."; });
@@ -135,12 +135,12 @@ io.on("connection", function (socket) {
       const map = {};
       if (card.type === "wdraw2") {
         const nxt = nextSeat(room, pid, false);
-        g.plusStack = 2; g.stackKind = "wdraw2"; g.currentId = nxt;
+        g.plusStack = 2; g.stackKind = "wdraw2"; g.afterDrawTo = nxt; g.currentId = nxt;
         setNotice(g, nameOf(room, pid) + " Joker +2 atti.", map);
         emitRoom(room); return;
       }
       if (card.type === "wtarget2") {
-        g.drawQueue = [{ playerId: d.targetId, left: 2 }]; g.stackKind = "wtarget2"; g.currentId = d.targetId;
+        g.drawQueue = [{ playerId: d.targetId, left: 2 }]; g.stackKind = "wtarget2"; g.afterDrawTo = nextSeat(room, pid, false); g.currentId = d.targetId;
         setNotice(g, nameOf(room, pid) + " Hedef +2: " + nameOf(room, d.targetId), map);
         emitRoom(room); return;
       }
@@ -198,7 +198,7 @@ io.on("connection", function (socket) {
     const map = {};
     if (card.type === "draw2") {
       g.plusStack = (g.stackKind === "draw2" ? (g.plusStack || 0) : 0) + 2;
-      g.stackKind = "draw2"; g.currentId = nxt;
+      g.stackKind = "draw2"; g.afterDrawTo = nxt; g.currentId = nxt;
       map[pid] = "+2 attin. Yigin " + g.plusStack;
       map[nxt] = "+2 yigini " + g.plusStack + ". +2 at veya cek.";
       room.players.forEach(function (p) { if (!map[p.id]) map[p.id] = nameOf(room, pid) + " +2 atti. Yigin " + g.plusStack; });
@@ -206,9 +206,9 @@ io.on("connection", function (socket) {
       emitRoom(room); return;
     }
     if (card.type === "wild4") {
-      g.plusStack = 4; g.stackKind = "wild4"; g.currentId = nxt;
-      map[pid] = "+4 attin. " + nameOf(room, nxt) + " cekecek, sonra kart atabilir.";
-      map[nxt] = "+4 yedin. 4 kez cek, sonra kart atabilirsin.";
+      g.plusStack = 4; g.stackKind = "wild4"; g.afterDrawTo = nxt; g.currentId = nxt;
+      map[pid] = "+4 attin. " + nameOf(room, nxt) + " cekecek.";
+      map[nxt] = "+4 yedin. 4 kez cek.";
       room.players.forEach(function (p) { if (!map[p.id]) map[p.id] = nameOf(room, pid) + " +4 atti."; });
       setNotice(g, nameOf(room, pid) + " Joker +4 atti.", map);
       emitRoom(room); return;
@@ -247,7 +247,9 @@ io.on("connection", function (socket) {
       g.lastAction = nameOf(room, pid) + " ceza cekti. Kalan " + q.left;
       if (q.left <= 0) g.drawQueue.shift();
       if (!g.drawQueue.length) {
-        g.stackKind = null; g.currentId = nextSeat(room, pid, false);
+        g.stackKind = null;
+        g.currentId = g.afterDrawTo || nextSeat(room, pid, false);
+        delete g.afterDrawTo;
         g.notice = nameOf(room, pid) + " cezayi bitirdi. Sira " + nameOf(room, g.currentId) + " oyuncusunda.";
         g.lastAction = g.notice;
         g.noticeYou = {};
@@ -260,7 +262,9 @@ io.on("connection", function (socket) {
       drawCards(g, pid, 1); g.plusStack -= 1; io.to(room.code).emit("cardDraw", { toId: pid });
       g.lastAction = nameOf(room, pid) + " ceza cekti. Kalan " + g.plusStack;
       if (g.plusStack <= 0) {
-        g.plusStack = 0; g.stackKind = null; g.currentId = nextSeat(room, pid, false);
+        g.plusStack = 0; g.stackKind = null;
+        g.currentId = g.afterDrawTo || nextSeat(room, pid, false);
+        delete g.afterDrawTo;
         g.lastAction = nameOf(room, pid) + " cezayi bitirdi. Sira " + nameOf(room, g.currentId) + " oyuncusunda.";
         g.notice = g.lastAction;
         g.noticeYou = {};
