@@ -5,10 +5,10 @@ socket.on("connect", function () {
   var name = localStorage.getItem("uno_name") || me.name || "";
   if (code && token && !state) socket.emit("join", { name: name, code: code, token: token });
 });
-setInterval(function () { try { fetch("/health"); socket.emit("ping"); } catch (e) {} }, 180000);
+setInterval(function () { try { fetch("/health"); socket.emit("ping"); } catch (e) {} }, 20000);
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V18";
+const VERSION = "V20";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
 let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false, picked = null, flying = null, iSaidUno = false, holdTurnId = null, unoBurst = null;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); if (d.code) localStorage.setItem("uno_code", d.code); screen = "lobby"; err = ""; render(); });
@@ -68,7 +68,7 @@ function render() {
     return game();
   } catch (e) { app.innerHTML = "<p class='err'>" + esc(e.message) + "</p>"; }
 }
-function ver() { return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V18</p>"; }
+function ver() { return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V20</p>"; }
 function home() { app.innerHTML = "<div class=\"logo\">UNO</div><p class=\"sub\" style=\"text-align:center\">Telefonlardan kodla katil</p><button class=\"btn btn-main\" onclick=\"goCreate()\">Oyun kur</button><button class=\"btn btn-ghost\" onclick=\"goJoin()\">Koda katil</button><button class=\"btn btn-ghost\" onclick=\"goCards()\">Ozel kartlar</button><button class=\"btn btn-ghost\" onclick=\"goCounts()\">Kart sayilari</button><button class=\"btn btn-ghost\" onclick=\"goRules()\">Kurallar</button><p class=\"err\">" + esc(err) + "</p>" + ver(); }
 function create() { app.innerHTML = "<h1>Oyun kur</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Toplam oyuncu</label><select id=\"max\"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select><button class=\"btn btn-main\" onclick=\"doCreate()\">Kur ve kod al</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
 function join() { app.innerHTML = "<h1>Oyuna katil / geri don</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Oyun kodu</label><input id=\"code\" maxlength=\"6\" inputmode=\"numeric\" /><button class=\"btn btn-main\" onclick=\"doJoin()\">Katil</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
@@ -134,11 +134,11 @@ function tableHtml() {
   var g0 = state.game || {};
   var clockwise = !g0.direction || g0.direction === 1;
   var colorName = COLOR_TR[g0.chosenColor] || "";
+  html += "<div class=\"draw-pile\"><div class=\"back bigback\"></div><div class=\"deck-left\">Kalan " + (g0.deckCount != null ? g0.deckCount : "0") + "</div></div>";
   html += "<div class=\"felt\">";
   html += clockwise ? "<div class=\"dir-arrow\">&#8635; Saat</div>" : "<div class=\"dir-arrow revd\">&#8634; Ters</div>";
-  html += "<div class=\"draw-pile\"><div class=\"back bigback\"></div><div class=\"deck-left\">Kalan " + (g0.deckCount != null ? g0.deckCount : "0") + "</div></div>";
   html += (g0.top ? cardHtml(g0.top, "") : "");
-  html += "<div class=\"color-name col-" + (g0.chosenColor||"") + "\">" + (colorName || "-") + "</div>";
+  html += "<div class=\"color-name col-" + (g0.chosenColor||"") + "\">" + (colorName || "Renk") + "</div>";
   html += "</div>";
   for (var i = 0; i < n; i++) {
     var pid = seats[i], p = null;
