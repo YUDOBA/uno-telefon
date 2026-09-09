@@ -9,19 +9,34 @@
   <meta name="theme-color" content="#070b14" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Uno Telefon</title>
-  <link rel="stylesheet" href="/style.css?v=21" />
+  <link rel="stylesheet" href="/style.css?v=22" />
 </head>
 <body>
   <div id="app">
     <div class="logo">UNO</div>
-    <p class="sub" style="text-align:center">Uno Telefon V21</p>
+    <p class="sub" style="text-align:center">Uno Telefon V22</p>
   </div>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/client.js?v=21"></script>
+  <script src="/client.js?v=22"></script>
   <script>
-    function ver(){ return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V21</p>"; }
+    function ver(){ return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V22</p>"; }
     try { render(); } catch (e) {}
-    setInterval(function () { try { fetch("/health"); if (typeof socket !== "undefined") socket.emit("ping"); } catch (e) {} }, 20000);
+    function keepAlive() {
+      try {
+        fetch("/health");
+        if (typeof socket === "undefined") return;
+        if (!socket.connected) socket.connect();
+        socket.emit("ping");
+        var code = localStorage.getItem("uno_code") || "";
+        var token = localStorage.getItem("uno_token") || "";
+        var name = localStorage.getItem("uno_name") || "";
+        if (code && token) socket.emit("join", { name: name, code: code, token: token });
+      } catch (e) {}
+    }
+    setInterval(keepAlive, 15000);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) keepAlive(); });
+    window.addEventListener("pageshow", keepAlive);
+    window.addEventListener("focus", keepAlive);
   </script>
 </body>
 </html>
