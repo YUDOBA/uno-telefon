@@ -116,7 +116,7 @@ function cardsHelp() {
   html += row({color:"black",type:"swap",value:"swap"}, "El Degis", "Her zaman atilir. Secilen oyuncu ile eller degisir.");
   html += row({color:"black",type:"shuffle",value:"shuffle"}, "El Karistir", "Her zaman atilir. Butun eller toplanir, karistirilir, ayni sayida dagitilir.");
   html += row({color:"black",type:"skipall",value:"skipall"}, "Herkesi Atla", "Her zaman atilir. Renk secilir. Diger herkes atlanir, ayni oyuncu tekrar oynar.");
-  html += "<button class=\"btn btn-main\" onclick=\"backFromCards()\">Geri</button>" + ver();
+  html += "<button class=\"btn btn-main\" onclick=\"backFromCards()\">Oyuna don</button>" + ver();
   app.innerHTML = html;
 }
 function seatXY(pid) {
@@ -162,7 +162,8 @@ function goCounts() { screen = "counts"; err = ""; render(); }
 function goRules() { screen = "rules"; err = ""; render(); }
 function goCards() { screen = "cards"; err = ""; render(); }
 function backFromCards() {
-  if (state && (state.status === "lobby")) screen = "lobby";
+  if (state && (state.status === "playing" || state.status === "winnerShow" || state.status === "finished" || state.status === "roundEnd")) screen = "game";
+  else if (state && state.status === "lobby") screen = "lobby";
   else screen = "home";
   err = ""; render();
 }
