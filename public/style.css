@@ -85,3 +85,13 @@ input,select { width:100%; padding:14px; border-radius:12px; border:1px solid #2
 .color-name.col-green { color:#3dce7a; }
 .color-name.col-blue { color:#6aa8ff; }
 .felt .ucard { margin:0 auto; }
+.unoburst { position:absolute; z-index:95; width:90px; pointer-events:none; animation:unoburst 1s ease forwards; }
+.unoburst .seat { position:relative; left:auto; top:auto; width:100%; transform:none; padding:10px 6px; }
+.unoburst .seat-name { font-size:.9rem; }
+.unoburst .seat-uno { font-size:1rem; }
+@keyframes unoburst {
+  0% { left:var(--sx); top:var(--sy); transform:translate(-50%,-50%) scale(1); }
+  35% { left:50%; top:50%; transform:translate(-50%,-50%) scale(2); }
+  65% { left:50%; top:50%; transform:translate(-50%,-50%) scale(2); }
+  100% { left:var(--sx); top:var(--sy); transform:translate(-50%,-50%) scale(1); }
+}
