@@ -247,10 +247,11 @@ io.on("connection", function (socket) {
       g.lastAction = nameOf(room, pid) + " ceza cekti. Kalan " + q.left;
       if (q.left <= 0) g.drawQueue.shift();
       if (!g.drawQueue.length) {
-        g.stackKind = null; g.currentId = pid;
-        g.notice = nameOf(room, pid) + " cezayi bitirdi. Simdi kart atabilir.";
+        g.stackKind = null; g.currentId = nextSeat(room, pid, false);
+        g.notice = nameOf(room, pid) + " cezayi bitirdi. Sira " + nameOf(room, g.currentId) + " oyuncusunda.";
         g.lastAction = g.notice;
-        g.noticeYou = {}; g.noticeYou[pid] = "Cezan bitti. Uygun karti at veya cek.";
+        g.noticeYou = {};
+        g.noticeYou[g.currentId] = "Ceza bitti. Sira sende.";
       } else g.currentId = g.drawQueue[0].playerId;
       emitRoom(room); return;
     }
@@ -259,10 +260,11 @@ io.on("connection", function (socket) {
       drawCards(g, pid, 1); g.plusStack -= 1; io.to(room.code).emit("cardDraw", { toId: pid });
       g.lastAction = nameOf(room, pid) + " ceza cekti. Kalan " + g.plusStack;
       if (g.plusStack <= 0) {
-        g.plusStack = 0; g.stackKind = null; g.currentId = pid;
-        g.lastAction = nameOf(room, pid) + " cezayi bitirdi. Simdi kart atabilir.";
+        g.plusStack = 0; g.stackKind = null; g.currentId = nextSeat(room, pid, false);
+        g.lastAction = nameOf(room, pid) + " cezayi bitirdi. Sira " + nameOf(room, g.currentId) + " oyuncusunda.";
         g.notice = g.lastAction;
-        g.noticeYou = {}; g.noticeYou[pid] = "Cezan bitti. Uygun karti at veya cek.";
+        g.noticeYou = {};
+        g.noticeYou[g.currentId] = "Ceza bitti. Sira sende.";
       }
       emitRoom(room); return;
     }
