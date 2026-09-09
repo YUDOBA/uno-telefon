@@ -297,7 +297,7 @@ io.on("connection", function (socket) {
     const pid = socket.data.playerId;
     if (room.game.hands[pid] && room.game.hands[pid].length === 2) {
       room.game.saidUno[pid] = true; room.game.lastAction = nameOf(room, pid) + ": UNO!";
-      io.to(room.code).emit("unoShout");
+      io.to(room.code).emit("unoShout", { playerId: pid, name: nameOf(room, pid) });
       emitRoom(room);
     }
   });
