@@ -8,7 +8,7 @@ socket.on("connect", function () {
 setInterval(function () { try { fetch("/health"); socket.emit("ping"); } catch (e) {} }, 20000);
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V26";
+const VERSION = "V27";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
 let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false, picked = null, flying = null, iSaidUno = false, holdTurnId = null, unoBurst = null;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); if (d.code) localStorage.setItem("uno_code", d.code); screen = "lobby"; err = ""; render(); });
@@ -52,10 +52,35 @@ function cardHtml(c, extra, idx) {
   else if (c.type === "swap") { cor = corner("SW"); mid = "<div class=\"oval\"><div class=\"plus\">SW</div></div>"; }
   else if (c.type === "shuffle") { cor = corner("SH"); mid = "<div class=\"oval\"><div class=\"plus\">SH</div></div>"; }
   else if (c.type === "skipall") { cor = corner("ALL"); mid = "<div class=\"oval\"><div class=\"plus\">ALL</div></div>"; }
-  return "<div class=\"ucard sm " + c.color + " " + extra + "\"" + click + ">" + cor + mid + "</div>";
+  return "<div class=\"ucard sm " + c.color + " " + extra + "\"" + click + ">" + cor + mid + (c.fresh ? "<span class=\"fresh-dot\"></span>" : "") + "</div>";
 }
 function backs(n) { var h = "", s = Math.min(n, 8); for (var i = 0; i < s; i++) h += "<div class=\"back\"></div>"; return h; }
 function isActor() { return state && state.game && state.game.currentId === me.playerId; }
+function colorRank(c) {
+  if (c.color === "yellow") return 0;
+  if (c.color === "green") return 1;
+  if (c.color === "red") return 2;
+  if (c.color === "blue") return 3;
+  return 4;
+}
+function sortHand(hand) {
+  return (hand || []).map(function (c, i) { return { c: c, i: i }; }).sort(function (a, b) {
+    var d = colorRank(a.c) - colorRank(b.c); if (d) return d;
+    var na = a.c.type === "number" ? Number(a.c.value) : 100;
+    var nb = b.c.type === "number" ? Number(b.c.value) : 100;
+    if (na !== nb) return na - nb;
+    return String(a.c.type).localeCompare(String(b.c.type));
+  });
+}
+function handHtml(hand, myTurn, g) {
+  return "<div class=\"hand\">" + sortHand(hand).map(function (it) {
+    var c = it.c, idx = it.i, cls = "";
+    if (myTurn && g && canPlay(c, g.top, g.chosenColor, g.stackKind)) cls += " ok";
+    else cls += " off";
+    if (picked === idx) cls += " picked";
+    return cardHtml(c, cls, idx);
+  }).join("") + "</div>";
+}
 function render() {
   try {
     if (screen === "home") return home();
@@ -68,7 +93,7 @@ function render() {
     return game();
   } catch (e) { app.innerHTML = "<p class='err'>" + esc(e.message) + "</p>"; }
 }
-function ver() { return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V26</p>"; }
+function ver() { return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V27</p>"; }
 function home() { app.innerHTML = "<div class=\"logo\">UNO</div><p class=\"sub\" style=\"text-align:center\">Telefonlardan kodla katil</p><button class=\"btn btn-main\" onclick=\"goCreate()\">Oyun kur</button><button class=\"btn btn-ghost\" onclick=\"goJoin()\">Koda katil</button><button class=\"btn btn-ghost\" onclick=\"goCards()\">Ozel kartlar</button><button class=\"btn btn-ghost\" onclick=\"goCounts()\">Kart sayilari</button><button class=\"btn btn-ghost\" onclick=\"goRules()\">Kurallar</button><p class=\"err\">" + esc(err) + "</p>" + ver(); }
 function create() { app.innerHTML = "<h1>Oyun kur</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Toplam oyuncu</label><select id=\"max\"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select><button class=\"btn btn-main\" onclick=\"doCreate()\">Kur ve kod al</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
 function join() { app.innerHTML = "<h1>Oyuna katil / geri don</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Oyun kodu</label><input id=\"code\" maxlength=\"6\" inputmode=\"numeric\" /><button class=\"btn btn-main\" onclick=\"doJoin()\">Katil</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
@@ -207,13 +232,7 @@ function game() {
   html += "</div><div class=\"deck-left\">" + (g.deckCount != null ? g.deckCount : "0") + "</div></div></div>";
   html += "<button class=\"mini-btn\" onclick=\"showScores=true;render()\">Skor</button>";
   html += tableHtml();
-  html += "<div class=\"hand\">" + (g.hand || []).map(function (c, idx) {
-    var cls = "";
-    if (myTurn && canPlay(c, g.top, g.chosenColor, g.stackKind)) cls += " ok";
-    else cls += " off";
-    if (picked === idx) cls += " picked";
-    return cardHtml(c, cls, idx);
-  }).join("") + "</div>";
+  html += handHtml(g.hand || [], myTurn, g);
   html += "<p class=\"err\">" + esc(err) + "</p></div>" + ver();
   var root = document.getElementById("game-root");
   if (root) {
