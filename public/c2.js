@@ -192,6 +192,12 @@ function goFull() {
   try { if (fn) fn.call(el); } catch (e) {}
   try { window.scrollTo(0, 1); } catch (e) {}
 }
+function closeRoom() {
+  try { socket.emit("leave"); } catch (e) {}
+  try { localStorage.removeItem("uno_code"); } catch (e) {}
+  state = null; pendingWild = null; pendingCustom = null; assignMap = {};
+  screen = "home"; err = ""; render();
+}
 function goHome() { screen = "home"; err = ""; render(); }
 function goCreate() { goFull(); screen = "create"; err = ""; render(); }
 function goJoin() { goFull(); screen = "join"; err = ""; render(); }
