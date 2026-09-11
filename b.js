@@ -120,7 +120,7 @@ io.on("connection", function (socket) {
       g.drawQueue = queue; g.stackKind = "custom"; g.afterDrawTo = nextSeat(room, pid, false);
       const parts = queue.map(function (q) { return nameOf(room, q.playerId) + " " + q.left; }).join(", ");
       const map = {}; map[pid] = "Ozel Joker attin. 8 ceza: " + parts;
-      queue.forEach(function (q) { map[q.playerId] = "Sana " + q.left + " kart ceza. Kart cek'e bas."; });
+      queue.forEach(function (q) { map[q.playerId] = "Sana " + q.left + " kart ceza. Desteye bas."; });
       room.players.forEach(function (p) { if (!map[p.id]) map[p.id] = nameOf(room, pid) + " Ozel Joker atti. " + parts; });
       setNotice(g, nameOf(room, pid) + " Ozel Joker atti. " + parts, map);
       g.currentId = queue[0].playerId; emitRoom(room); return;
@@ -200,7 +200,7 @@ io.on("connection", function (socket) {
       g.plusStack = (g.stackKind === "draw2" ? (g.plusStack || 0) : 0) + 2;
       g.stackKind = "draw2"; g.afterDrawTo = nxt; g.currentId = nxt;
       map[pid] = "+2 attin. Yigin " + g.plusStack;
-      map[nxt] = "+2 yigini " + g.plusStack + ". +2 at veya cek.";
+      map[nxt] = "+2 yigini " + g.plusStack + ". +2 at veya desteye bas.";
       room.players.forEach(function (p) { if (!map[p.id]) map[p.id] = nameOf(room, pid) + " +2 atti. Yigin " + g.plusStack; });
       setNotice(g, nameOf(room, pid) + " +2 atti. Yigin " + g.plusStack, map);
       emitRoom(room); return;
@@ -208,7 +208,7 @@ io.on("connection", function (socket) {
     if (card.type === "wild4") {
       g.plusStack = 4; g.stackKind = "wild4"; g.afterDrawTo = nxt; g.currentId = nxt;
       map[pid] = "+4 attin. " + nameOf(room, nxt) + " cekecek.";
-      map[nxt] = "+4 yedin. 4 kez cek.";
+      map[nxt] = "+4 yedin. Desteye bas.";
       room.players.forEach(function (p) { if (!map[p.id]) map[p.id] = nameOf(room, pid) + " +4 atti."; });
       setNotice(g, nameOf(room, pid) + " Joker +4 atti.", map);
       emitRoom(room); return;
@@ -272,18 +272,19 @@ io.on("connection", function (socket) {
       }
       emitRoom(room); return;
     }
+    if (g.pendingDrawn && g.pendingDrawn.playerId === pid) {
+      return socket.emit("errorMsg", "Zaten 1 kart cektin. At veya Pas.");
+    }
     const top = g.discard[g.discard.length - 1];
     const taken = drawCards(g, pid, 1);
     io.to(room.code).emit("cardDraw", { toId: pid });
     const drawn = taken[0];
-    if (drawn && canPlay(drawn, top, g.chosenColor, null)) {
-      g.pendingDrawn = { playerId: pid, card: drawn };
-      g.lastAction = nameOf(room, pid) + " kart cekti, oynayabilir veya pas.";
-      emitRoom(room); socket.emit("drawnPlayable"); return;
-    }
-    g.lastAction = nameOf(room, pid) + " kart cekti.";
-    g.currentId = nextSeat(room, pid, false);
-    emitRoom(room);
+    g.pendingDrawn = { playerId: pid, card: drawn };
+    g.lastAction = nameOf(room, pid) + " kart cekti. At veya Pas.";
+    g.notice = g.lastAction;
+    g.noticeYou = {};
+    g.noticeYou[pid] = drawn && canPlay(drawn, top, g.chosenColor, null) ? "Cektigin karti atabilirsin veya Pas." : "Cektin. Uygun kartin yoksa Pas.";
+    emitRoom(room); socket.emit("drawnPlayable");
   });
   socket.on("passAfterDraw", function () {
     const room = rooms.get(socket.data.roomCode);
