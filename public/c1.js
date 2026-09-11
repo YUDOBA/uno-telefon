@@ -8,7 +8,7 @@ socket.on("connect", function () {
 setInterval(function () { try { fetch("/health"); socket.emit("ping"); } catch (e) {} }, 20000);
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V24";
+const VERSION = "V26";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
 let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false, picked = null, flying = null, iSaidUno = false, holdTurnId = null, unoBurst = null;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); if (d.code) localStorage.setItem("uno_code", d.code); screen = "lobby"; err = ""; render(); });
@@ -68,7 +68,7 @@ function render() {
     return game();
   } catch (e) { app.innerHTML = "<p class='err'>" + esc(e.message) + "</p>"; }
 }
-function ver() { return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V24</p>"; }
+function ver() { return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V26</p>"; }
 function home() { app.innerHTML = "<div class=\"logo\">UNO</div><p class=\"sub\" style=\"text-align:center\">Telefonlardan kodla katil</p><button class=\"btn btn-main\" onclick=\"goCreate()\">Oyun kur</button><button class=\"btn btn-ghost\" onclick=\"goJoin()\">Koda katil</button><button class=\"btn btn-ghost\" onclick=\"goCards()\">Ozel kartlar</button><button class=\"btn btn-ghost\" onclick=\"goCounts()\">Kart sayilari</button><button class=\"btn btn-ghost\" onclick=\"goRules()\">Kurallar</button><p class=\"err\">" + esc(err) + "</p>" + ver(); }
 function create() { app.innerHTML = "<h1>Oyun kur</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Toplam oyuncu</label><select id=\"max\"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select><button class=\"btn btn-main\" onclick=\"doCreate()\">Kur ve kod al</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
 function join() { app.innerHTML = "<h1>Oyuna katil / geri don</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Oyun kodu</label><input id=\"code\" maxlength=\"6\" inputmode=\"numeric\" /><button class=\"btn btn-main\" onclick=\"doJoin()\">Katil</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
@@ -170,25 +170,6 @@ function tableHtml() {
   }
   return html + "</div>";
 }
-function assignPanel() {
-  var others = state.players.filter(function (p) { return p.id !== me.playerId; });
-  var sum = 0; others.forEach(function (p) { sum += assignMap[p.id] || 0; });
-  var col = pendingCustom && pendingCustom.color;
-  var h = "<div class=\"panel\"><p>Ozel 8 atildi. Renk sec ve 8 cezayi dagit (" + sum + " / 8)</p>";
-  h += "<div class=\"colors\">";
-  h += "<button style=\"background:var(--red)\" onclick=\"confirmWild('red')\">Kirmizi</button>";
-  h += "<button style=\"background:var(--yellow);color:#222\" onclick=\"confirmWild('yellow')\">Sari</button>";
-  h += "<button style=\"background:var(--green)\" onclick=\"confirmWild('green')\">Yesil</button>";
-  h += "<button style=\"background:var(--blue)\" onclick=\"confirmWild('blue')\">Mavi</button></div>";
-  if (col) h += "<p>Secilen renk: " + (COLOR_TR[col]||col) + "</p>";
-  others.forEach(function (p) {
-    var v = assignMap[p.id] || 0;
-    h += "<div class=\"row\"><span>" + esc(p.name) + "</span><span><button class=\"mini-btn\" onclick=\"chgAs('" + p.id + "',-1)\">-</button> " + v + " <button class=\"mini-btn\" onclick=\"chgAs('" + p.id + "',1)\">+</button></span></div>";
-  });
-  h += "<button class=\"btn btn-main\" " + (sum === 8 && col ? "" : "disabled") + " onclick=\"confirmCustom()\">Tamam</button>";
-  h += "<button class=\"btn btn-ghost\" onclick=\"pendingCustom=null;pendingWild=null;assignMap={};render()\">Vazgec</button></div>";
-  return h;
-}
 function game() {
   var g = state && state.game;
   if (state.status === "winnerShow") {
@@ -206,6 +187,7 @@ function game() {
     return;
   }
   if (!g) return lobby();
+  if (pendingWild !== null || pendingCustom) return pickScreen();
   var myTurn = isActor() && !g.winnerId && !state.paused;
   var penal = !!(g.isPenalty || g.plusStack || (g.drawQueue && g.drawQueue.length));
   var canPass = !!(drawnChoice || g.canPass) && myTurn && !penal;
@@ -219,8 +201,7 @@ function game() {
   if (state.paused) html += "<div class=\"panel warn one\">Siradaki oyuncu koptu, ayni ad ile donmeli.</div>";
   html += "<div class=\"hud\"><div class=\"hud-left\">";
   html += "<button class=\"btn btn-main btn-tile\" onclick=\"pressUno()\">UNO!</button>";
-  html += "<button class=\"btn btn-ghost btn-tile\" " + (canPass ? "" : "disabled") + " onclick=\"passDrawn()\">Pas</button>";
-  html += "</div>";
+  html += "<button class=\"btn btn-ghost btn-tile\" " + (canPass ? "" : "disabled") + " onclick=\"passDrawn()\">Pas</button></div>";
   html += "<div class=\"hud-right\"><div class=\"draw-pile" + (drawOn ? "" : " off") + "\" onclick=\"tapDeck()\"><div class=\"back bigback\"></div>";
   if (drawOn) html += "<div class=\"draw-label\">Kart<br>cek</div>";
   html += "</div><div class=\"deck-left\">" + (g.deckCount != null ? g.deckCount : "0") + "</div></div></div>";
@@ -233,15 +214,6 @@ function game() {
     if (picked === idx) cls += " picked";
     return cardHtml(c, cls, idx);
   }).join("") + "</div>";
-  if (pendingWild !== null && !pendingCustom) {
-    html += "<div class=\"panel\"><p>Renk sec</p><div class=\"colors\">";
-    html += "<button style=\"background:var(--red)\" onclick=\"confirmWild('red')\">Kirmizi</button>";
-    html += "<button style=\"background:var(--yellow);color:#222\" onclick=\"confirmWild('yellow')\">Sari</button>";
-    html += "<button style=\"background:var(--green)\" onclick=\"confirmWild('green')\">Yesil</button>";
-    html += "<button style=\"background:var(--blue)\" onclick=\"confirmWild('blue')\">Mavi</button></div></div>";
-  }
-  if (pendingCustom && pendingCustom.kind) html += targetPanel();
-  else if (pendingCustom) html += assignPanel();
   html += "<p class=\"err\">" + esc(err) + "</p></div>" + ver();
   var root = document.getElementById("game-root");
   if (root) {
