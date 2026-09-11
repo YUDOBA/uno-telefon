@@ -203,4 +203,13 @@ function goCreate() { goFull(); screen = "create"; err = ""; render(); }
 function goJoin() { goFull(); screen = "join"; err = ""; render(); }
 function doCreate() { var name = document.getElementById("name").value.trim() || "Kurucu"; me.name = name; socket.emit("create", { name: name, maxPlayers: document.getElementById("max").value }); }
 function doJoin() { var name = document.getElementById("name").value.trim() || "Oyuncu"; me.name = name; socket.emit("join", { name: name, code: document.getElementById("code").value.trim(), token: me.token }); }
+var _lobbyFn = lobby;
+lobby = function () {
+  _lobbyFn();
+  if (!app) return;
+  var html = app.innerHTML || "";
+  if (html.indexOf("closeRoom()") >= 0) return;
+  app.innerHTML = html.replace("</p>" + ver(), "</p><button class=\"btn btn-ghost\" onclick=\"closeRoom()\">Oyunu kapat</button>" + ver());
+  if (app.innerHTML.indexOf("closeRoom()") < 0) app.innerHTML = html.replace(ver(), "<button class=\"btn btn-ghost\" onclick=\"closeRoom()\">Oyunu kapat</button>" + ver());
+};
 render();
