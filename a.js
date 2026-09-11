@@ -10,7 +10,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.get("/health", function (req, res) { res.send("ok"); });
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V23";
+const VERSION = "V27";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
@@ -165,6 +165,15 @@ function publicRoom(room, viewerId) {
   };
 }
 function emitRoom(room) {
+  const g = room.game;
+  if (g && g.hands) {
+    let actor = g.currentId;
+    if (g.drawQueue && g.drawQueue.length) actor = g.drawQueue[0].playerId;
+    Object.keys(g.hands).forEach(function (pid) {
+      if (pid === actor) return;
+      (g.hands[pid] || []).forEach(function (c) { if (c) delete c.fresh; });
+    });
+  }
   for (const p of room.players) {
     if (p.socketId) io.to(p.socketId).emit("state", publicRoom(room, p.id));
   }
@@ -184,6 +193,7 @@ function drawCards(game, playerId, n) {
       if (!game.deck.length) break;
     }
     const c = game.deck.pop();
+    c.fresh = true;
     game.hands[playerId].push(c);
     taken.push(c);
   }
