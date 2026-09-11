@@ -8,7 +8,7 @@ socket.on("connect", function () {
 setInterval(function () { try { fetch("/health"); socket.emit("ping"); } catch (e) {} }, 20000);
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V21";
+const VERSION = "V23";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
 let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false, picked = null, flying = null, iSaidUno = false, holdTurnId = null, unoBurst = null;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); if (d.code) localStorage.setItem("uno_code", d.code); screen = "lobby"; err = ""; render(); });
@@ -68,7 +68,7 @@ function render() {
     return game();
   } catch (e) { app.innerHTML = "<p class='err'>" + esc(e.message) + "</p>"; }
 }
-function ver() { return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V21</p>"; }
+function ver() { return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V23</p>"; }
 function home() { app.innerHTML = "<div class=\"logo\">UNO</div><p class=\"sub\" style=\"text-align:center\">Telefonlardan kodla katil</p><button class=\"btn btn-main\" onclick=\"goCreate()\">Oyun kur</button><button class=\"btn btn-ghost\" onclick=\"goJoin()\">Koda katil</button><button class=\"btn btn-ghost\" onclick=\"goCards()\">Ozel kartlar</button><button class=\"btn btn-ghost\" onclick=\"goCounts()\">Kart sayilari</button><button class=\"btn btn-ghost\" onclick=\"goRules()\">Kurallar</button><p class=\"err\">" + esc(err) + "</p>" + ver(); }
 function create() { app.innerHTML = "<h1>Oyun kur</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Toplam oyuncu</label><select id=\"max\"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select><button class=\"btn btn-main\" onclick=\"doCreate()\">Kur ve kod al</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
 function join() { app.innerHTML = "<h1>Oyuna katil / geri don</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Oyun kodu</label><input id=\"code\" maxlength=\"6\" inputmode=\"numeric\" /><button class=\"btn btn-main\" onclick=\"doJoin()\">Katil</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
@@ -134,12 +134,12 @@ function tableHtml() {
   var g0 = state.game || {};
   var clockwise = !g0.direction || g0.direction === 1;
   var colorName = COLOR_TR[g0.chosenColor] || "";
-  html += "<div class=\"draw-pile\"><div class=\"back bigback\"></div><div class=\"deck-left\">Kalan " + (g0.deckCount != null ? g0.deckCount : "0") + "</div></div>";
   html += "<div class=\"felt\">";
   html += clockwise ? "<div class=\"dir-arrow\">&#8635; Saat</div>" : "<div class=\"dir-arrow revd\">&#8634; Ters</div>";
   html += (g0.top ? cardHtml(g0.top, "") : "");
   html += "<div class=\"color-name col-" + (g0.chosenColor||"") + "\">" + (colorName || "Renk") + "</div>";
   html += "</div>";
+  var penal = !!(g0.isPenalty || g0.plusStack || (g0.drawQueue && g0.drawQueue.length));
   for (var i = 0; i < n; i++) {
     var pid = seats[i], p = null;
     for (var k = 0; k < state.players.length; k++) if (state.players[k].id === pid) p = state.players[k];
@@ -147,7 +147,11 @@ function tableHtml() {
     var a = Math.PI / 2 + ((i - selfI) / n) * 2 * Math.PI;
     var x = 50 + Math.cos(a) * 38, y = 50 + Math.sin(a) * 36;
     var on = holdTurnId ? (pid === holdTurnId) : p.isTurn;
-    html += "<div class=\"seat" + (on ? " seat-turn" : "") + (p.id === me.playerId ? " seat-me" : "") + "\" style=\"left:" + x + "%;top:" + y + "%\">";
+    var cls = "seat";
+    if (on && penal) cls += " seat-penal";
+    else if (on) cls += " seat-turn";
+    if (p.id === me.playerId) cls += " seat-me";
+    html += "<div class=\"" + cls + "\" style=\"left:" + x + "%;top:" + y + "%\">";
     html += "<div class=\"seat-name\">" + esc(p.name) + (p.id === me.playerId ? " (sen)" : "") + "</div>";
     html += "<div class=\"seat-backs\">" + backs(p.cardCount) + "</div><div class=\"seat-count\">" + p.cardCount + " kart</div>";
     if (p.saidUno) html += "<div class=\"seat-uno\">UNO</div>";
@@ -203,12 +207,24 @@ function game() {
   }
   if (!g) return lobby();
   var myTurn = isActor() && !g.winnerId && !state.paused;
-  var html = "<div class=\"row\" style=\"border:0\"><strong>Oda " + esc(state.code) + "</strong><span class=\"badge\">Tur " + (state.roundNow || 1) + "/" + (state.roundsTotal || 1) + "</span></div>";
-  if (g.noticeYou) html += "<div class=\"panel warn\">" + esc(g.noticeYou) + "</div>";
-  else if (g.notice) html += "<div class=\"panel warn\">" + esc(g.notice) + "</div>";
-  if (state.paused) html += "<div class=\"panel warn\">Siradaki oyuncu koptu, ayni ad ile donmeli.</div>";
-  if (g.plusStack) html += "<div class=\"panel warn\">Ceza yigini: " + g.plusStack + "</div>";
-  html += "<p class=\"msg\">" + esc(g.lastAction || "") + "</p>" + tableHtml();
+  var penal = !!(g.isPenalty || g.plusStack || (g.drawQueue && g.drawQueue.length));
+  var canPass = !!(drawnChoice || g.canPass) && myTurn && !penal;
+  var drawOn = myTurn && !state.paused && !g.drewOnce;
+  if (penal) drawOn = myTurn && !state.paused;
+  if (!penal && (g.canPass || g.drewOnce)) drawOn = false;
+  var note = g.noticeYou || g.notice || g.lastAction || "";
+  var html = "<div id=\"game-root\">";
+  html += "<div class=\"row\" style=\"border:0\"><strong>Oda " + esc(state.code) + "</strong><span class=\"badge\">Tur " + (state.roundNow || 1) + "/" + (state.roundsTotal || 1) + "</span></div>";
+  if (note) html += "<div class=\"panel warn one\">" + esc(note) + "</div>";
+  if (state.paused) html += "<div class=\"panel warn one\">Siradaki oyuncu koptu, ayni ad ile donmeli.</div>";
+  html += "<div class=\"hud\"><div class=\"hud-left\">";
+  html += "<button class=\"btn btn-main\" onclick=\"pressUno()\">UNO!</button>";
+  html += "<button class=\"btn btn-ghost\" " + (canPass ? "" : "disabled") + " onclick=\"passDrawn()\">Pas</button>";
+  html += "<button class=\"btn btn-ghost\" onclick=\"showScores=true;render()\">Skor</button></div>";
+  html += "<div class=\"hud-right\"><div class=\"draw-pile" + (drawOn ? "" : " off") + "\" onclick=\"tapDeck()\"><div class=\"back bigback\"></div>";
+  if (drawOn) html += "<div class=\"draw-label\">Kart<br>cek</div>";
+  html += "<div class=\"deck-left\">" + (g.deckCount != null ? g.deckCount : "0") + "</div></div></div></div>";
+  html += tableHtml();
   html += "<div class=\"hand\">" + (g.hand || []).map(function (c, idx) {
     var cls = "";
     if (myTurn && canPlay(c, g.top, g.chosenColor, g.stackKind)) cls += " ok";
@@ -216,18 +232,6 @@ function game() {
     if (picked === idx) cls += " picked";
     return cardHtml(c, cls, idx);
   }).join("") + "</div>";
-  if (picked != null && g.hand && g.hand[picked]) {
-    html += "<div class=\"peek\" onclick=\"tryPick(" + picked + ")\">" + cardHtml(g.hand[picked], "lg", null) + "<p class=\"sub\">Tekrar basarak at</p></div>";
-  }
-  var canPass = !!(drawnChoice || g.canPass) && myTurn && !g.plusStack && !(g.drawQueue && g.drawQueue.length);
-  var drawOn = myTurn && !state.paused;
-  html += "<div class=\"actions\">";
-  html += "<button class=\"btn " + (drawOn ? "btn-draw" : "btn-ghost") + "\" " + (drawOn ? "" : "disabled") + " onclick=\"socket.emit('draw')\">Kart cek</button>";
-  html += "<button class=\"btn btn-ghost\" " + (canPass ? "" : "disabled") + " onclick=\"passDrawn()\">Pas</button>";
-  html += "<button class=\"btn btn-main\" onclick=\"pressUno()\">UNO!</button>";
-  html += "<button class=\"btn btn-ghost\" onclick=\"showScores=true;render()\">Skor</button>";
-  html += "<button class=\"btn btn-ghost\" onclick=\"goCards()\">?</button>";
-  html += "</div>";
   if (pendingWild !== null && !pendingCustom) {
     html += "<div class=\"panel\"><p>Renk sec</p><div class=\"colors\">";
     html += "<button style=\"background:var(--red)\" onclick=\"confirmWild('red')\">Kirmizi</button>";
@@ -237,9 +241,21 @@ function game() {
   }
   if (pendingCustom && pendingCustom.kind) html += targetPanel();
   else if (pendingCustom) html += assignPanel();
-  if ((drawnChoice || g.canPass) && myTurn && !g.plusStack && !(g.drawQueue && g.drawQueue.length)) {
-    html += "<div class=\"panel warn\">Cektigin karti oynayabilirsin veya Pas.</div>";
+  html += "<p class=\"err\">" + esc(err) + "</p></div>" + ver();
+  var root = document.getElementById("game-root");
+  if (root) {
+    var wrap = document.createElement("div");
+    wrap.innerHTML = html;
+    var neu = wrap.querySelector("#game-root");
+    if (neu) { root.replaceWith(neu); return; }
   }
-  html += "<p class=\"err\">" + esc(err) + "</p>" + ver();
   app.innerHTML = html;
+}
+function tapDeck() {
+  if (!state || !state.game) return;
+  var g = state.game;
+  var myTurn = isActor() && !g.winnerId && !state.paused;
+  if (!myTurn) { err = "Sira sende degil."; render(); return; }
+  if (g.drewOnce && !g.isPenalty && !g.plusStack) { err = "Zaten cektin. At veya Pas."; render(); return; }
+  socket.emit("draw");
 }
