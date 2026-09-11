@@ -45,11 +45,11 @@ input,select { width:100%; padding:14px; border-radius:12px; border:1px solid #2
 .hud { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin:6px 0 4px; }
 .hud-left { display:flex; flex-direction:row; gap:8px; width:auto; }
 .hud-left .btn, .btn-tile { width:66px; height:75px; margin:0; padding:4px; font-size:.82rem; line-height:1.15; border-radius:10px; }
-.hud-right { width:90px; text-align:center; flex-shrink:0; }
-.draw-pile { position:relative; right:auto; top:auto; z-index:6; text-align:center; width:90px; height:120px; cursor:pointer; }
+.hud-right { width:66px; text-align:center; flex-shrink:0; }
+.draw-pile { position:relative; z-index:6; width:66px; height:75px; cursor:pointer; border-radius:10px; background:linear-gradient(160deg,#7a1020,#c4122f); border:2px solid #f3f3f3; box-shadow:0 6px 12px rgba(0,0,0,.35); }
 .draw-pile.off { opacity:.45; pointer-events:none; }
-.draw-label { position:absolute; left:0; right:0; top:0; height:120px; display:flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:900; line-height:1.1; color:#ffd000; text-shadow:0 1px 3px #000; pointer-events:none; }
-.bigback { width:90px; height:120px; margin:0 auto; display:block; border-radius:12px; border:3px solid #f3f3f3; box-shadow:0 8px 16px rgba(0,0,0,.4); }
+.draw-label { position:absolute; left:0; right:0; top:0; height:75px; display:flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:900; line-height:1.1; color:#fff; text-shadow:0 1px 3px #000; pointer-events:none; }
+.bigback { width:66px; height:75px; margin:0 auto; display:block; border-radius:10px; border:3px solid #f3f3f3; box-shadow:0 8px 16px rgba(0,0,0,.4); }
 .deck-left { margin-top:4px; font-size:.75rem; font-weight:700; color:#c9d6ea; }
 .ucard { position:relative; width:70px; height:106px; border-radius:10px; border:3px solid #f3f3f3; flex-shrink:0; overflow:hidden; color:#fff; box-shadow:0 8px 18px rgba(0,0,0,.4); }
 .ucard.sm { width:66px; height:100px; }
@@ -87,7 +87,7 @@ input,select { width:100%; padding:14px; border-radius:12px; border:1px solid #2
 .btn-draw { background:#18c46a; color:#06210f; }
 .dir-arrow { font-size:1.15rem; font-weight:800; color:var(--accent); margin-bottom:6px; }
 .dir-arrow.revd { color:#7ecbff; }
-.color-name { margin-top:8px; font-weight:800; font-size:1.05rem; }
+.color-name { margin-top:1px; font-weight:800; font-size:1.05rem; }
 .color-name.col-red { color:#ff6b6b; }
 .color-name.col-yellow { color:#f7d117; }
 .color-name.col-green { color:#3dce7a; }
