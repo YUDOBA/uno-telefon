@@ -48,7 +48,9 @@ input,select { width:100%; padding:14px; border-radius:12px; border:1px solid #2
 .hud-right { width:66px; text-align:center; flex-shrink:0; }
 .draw-pile { position:relative; z-index:6; width:66px; height:75px; cursor:pointer; border-radius:10px; background:linear-gradient(160deg,#7a1020,#c4122f); border:2px solid #f3f3f3; box-shadow:0 6px 12px rgba(0,0,0,.35); }
 .draw-pile.off { opacity:.45; pointer-events:none; }
-.draw-label { position:absolute; left:0; right:0; top:0; height:75px; display:flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:900; line-height:1.1; color:#fff; text-shadow:0 1px 3px #000; pointer-events:none; }
+.draw-pile .back, .draw-pile .bigback { display:none !important; }
+.draw-pile:after { content:"Kart cek"; position:absolute; left:0; right:0; top:0; height:75px; display:flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:900; color:#fff; text-align:center; pointer-events:none; }
+.draw-label { display:none; }
 .bigback { width:66px; height:75px; margin:0 auto; display:block; border-radius:10px; border:3px solid #f3f3f3; box-shadow:0 8px 16px rgba(0,0,0,.4); }
 .deck-left { margin-top:4px; font-size:.75rem; font-weight:700; color:#c9d6ea; }
 .ucard { position:relative; width:70px; height:106px; border-radius:10px; border:3px solid #f3f3f3; flex-shrink:0; overflow:hidden; color:#fff; box-shadow:0 8px 18px rgba(0,0,0,.4); }
