@@ -36,10 +36,10 @@ function confirmWild(color) {
 }
 function colorTiles() {
   return "<div class=\"color-row\">" +
-    "<button class=\"color-tile\" style=\"background:var(--red)\" onclick=\"confirmWild('red')\">Kart rengini secin</button>" +
-    "<button class=\"color-tile\" style=\"background:var(--yellow);color:#222\" onclick=\"confirmWild('yellow')\">Kart rengini secin</button>" +
-    "<button class=\"color-tile\" style=\"background:var(--green)\" onclick=\"confirmWild('green')\">Kart rengini secin</button>" +
-    "<button class=\"color-tile\" style=\"background:var(--blue)\" onclick=\"confirmWild('blue')\">Kart rengini secin</button></div>";
+    "<button class=\"color-tile\" style=\"background:var(--yellow)\" onclick=\"confirmWild('yellow')\"></button>" +
+    "<button class=\"color-tile\" style=\"background:var(--green)\" onclick=\"confirmWild('green')\"></button>" +
+    "<button class=\"color-tile\" style=\"background:var(--red)\" onclick=\"confirmWild('red')\"></button>" +
+    "<button class=\"color-tile\" style=\"background:var(--blue)\" onclick=\"confirmWild('blue')\"></button></div>";
 }
 function pickScreen() {
   var others = (state.players || []).filter(function (p) { return p.id !== me.playerId; });
@@ -63,6 +63,8 @@ function pickScreen() {
     });
     html += "<button class=\"btn btn-main\" " + (sum === 8 && col ? "" : "disabled") + " onclick=\"confirmCustom()\">Tamam</button>";
   }
+  html += "<p class=\"sub\">Elin</p>";
+  html += handHtml((state.game && state.game.hand) || [], false, state.game);
   html += "<button class=\"btn btn-ghost\" onclick=\"pendingCustom=null;pendingWild=null;assignMap={};render()\">Vazgec</button><p class=\"err\">" + esc(err) + "</p></div>" + ver();
   app.innerHTML = html;
 }
