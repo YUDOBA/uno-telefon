@@ -103,3 +103,6 @@ input,select { width:100%; padding:14px; border-radius:12px; border:1px solid #2
   65% { left:50%; top:50%; transform:translate(-50%,-50%) scale(2); }
   100% { left:var(--sx); top:var(--sy); transform:translate(-50%,-50%) scale(1); }
 }
+.pick-screen { padding-bottom:24px; }
+.color-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:10px 0 14px; }
+.color-tile { width:66px; height:75px; border:0; border-radius:10px; color:#fff; font-weight:800; font-size:.68rem; line-height:1.15; padding:6px; }
