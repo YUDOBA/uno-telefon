@@ -34,28 +34,42 @@ function confirmWild(color) {
   if (pendingCustom) { pendingCustom.color = color; render(); return; }
   socket.emit("play", { cardIndex: i, chosenColor: color });
 }
+function colorTiles() {
+  return "<div class=\"color-row\">" +
+    "<button class=\"color-tile\" style=\"background:var(--red)\" onclick=\"confirmWild('red')\">Kart rengini secin</button>" +
+    "<button class=\"color-tile\" style=\"background:var(--yellow);color:#222\" onclick=\"confirmWild('yellow')\">Kart rengini secin</button>" +
+    "<button class=\"color-tile\" style=\"background:var(--green)\" onclick=\"confirmWild('green')\">Kart rengini secin</button>" +
+    "<button class=\"color-tile\" style=\"background:var(--blue)\" onclick=\"confirmWild('blue')\">Kart rengini secin</button></div>";
+}
+function pickScreen() {
+  var others = (state.players || []).filter(function (p) { return p.id !== me.playerId; });
+  var html = "<div class=\"pick-screen\"><h1>Secim</h1>";
+  html += "<p class=\"sub\">Kart rengini secin</p>" + colorTiles();
+  var col = pendingCustom && pendingCustom.color;
+  if (col) html += "<p><b>Secilen renk: " + (COLOR_TR[col] || col) + "</b></p>";
+  if (pendingCustom && pendingCustom.kind) {
+    html += "<p>" + (pendingCustom.kind === "swap" ? "El degisecegin oyuncu" : "Hedef oyuncu") + "</p>";
+    others.forEach(function (p) {
+      var on = pendingCustom.target === p.id;
+      html += "<button class=\"btn " + (on ? "btn-main" : "btn-ghost") + "\" onclick=\"pendingCustom.target='" + p.id + "';render()\">" + esc(p.name) + " (" + (p.cardCount || 0) + " kart)</button>";
+    });
+    html += "<button class=\"btn btn-main\" " + (col && pendingCustom.target ? "" : "disabled") + " onclick=\"confirmTarget()\">Tamam</button>";
+  } else if (pendingCustom) {
+    var sum = 0; others.forEach(function (p) { sum += assignMap[p.id] || 0; });
+    html += "<p>8 cezayi dagit (" + sum + " / 8)</p>";
+    others.forEach(function (p) {
+      var v = assignMap[p.id] || 0;
+      html += "<div class=\"row\"><span>" + esc(p.name) + " (" + (p.cardCount || 0) + " kart)</span><span><button class=\"mini-btn\" onclick=\"chgAs('" + p.id + "',-1)\">-</button> " + v + " <button class=\"mini-btn\" onclick=\"chgAs('" + p.id + "',1)\">+</button></span></div>";
+    });
+    html += "<button class=\"btn btn-main\" " + (sum === 8 && col ? "" : "disabled") + " onclick=\"confirmCustom()\">Tamam</button>";
+  }
+  html += "<button class=\"btn btn-ghost\" onclick=\"pendingCustom=null;pendingWild=null;assignMap={};render()\">Vazgec</button><p class=\"err\">" + esc(err) + "</p></div>" + ver();
+  app.innerHTML = html;
+}
 function chgAs(id, d) {
   var v = (assignMap[id] || 0) + d; if (v < 0) v = 0;
   var sum = 0; Object.keys(assignMap).forEach(function (k) { if (k !== id) sum += assignMap[k] || 0; });
   if (sum + v > 8) v = 8 - sum; assignMap[id] = v; render();
-}
-function targetPanel() {
-  var others = state.players.filter(function (p) { return p.id !== me.playerId; });
-  var col = pendingCustom && pendingCustom.color;
-  var h = "<div class=\"panel\"><p>" + (pendingCustom.kind === "swap" ? "El degisecegin oyuncu" : "Hedef +2 oyuncu") + "</p>";
-  h += "<div class=\"colors\">";
-  h += "<button style=\"background:var(--red)\" onclick=\"confirmWild('red')\">Kirmizi</button>";
-  h += "<button style=\"background:var(--yellow);color:#222\" onclick=\"confirmWild('yellow')\">Sari</button>";
-  h += "<button style=\"background:var(--green)\" onclick=\"confirmWild('green')\">Yesil</button>";
-  h += "<button style=\"background:var(--blue)\" onclick=\"confirmWild('blue')\">Mavi</button></div>";
-  if (col) h += "<p>Renk: " + (COLOR_TR[col]||col) + "</p>";
-  others.forEach(function (p) {
-    var on = pendingCustom.target === p.id;
-    h += "<button class=\"btn " + (on ? "btn-main" : "btn-ghost") + "\" onclick=\"pendingCustom.target='" + p.id + "';render()\">" + esc(p.name) + "</button>";
-  });
-  h += "<button class=\"btn btn-main\" " + (col && pendingCustom.target ? "" : "disabled") + " onclick=\"confirmTarget()\">Tamam</button>";
-  h += "<button class=\"btn btn-ghost\" onclick=\"pendingCustom=null;pendingWild=null;render()\">Vazgec</button></div>";
-  return h;
 }
 function confirmTarget() {
   socket.emit("play", { cardIndex: pendingCustom.i, chosenColor: pendingCustom.color, targetId: pendingCustom.target });
