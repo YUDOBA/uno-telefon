@@ -8,7 +8,7 @@ socket.on("connect", function () {
 setInterval(function () { try { fetch("/health"); socket.emit("ping"); } catch (e) {} }, 20000);
 const app = document.getElementById("app");
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V23";
+const VERSION = "V24";
 let me = { playerId: null, name: localStorage.getItem("uno_name") || "", token: localStorage.getItem("uno_token") || "" };
 let state = null, screen = "home", err = "", pendingWild = null, pendingCustom = null, assignMap = {}, drawnChoice = false, showScores = false, picked = null, flying = null, iSaidUno = false, holdTurnId = null, unoBurst = null;
 socket.on("created", function (d) { me.playerId = d.playerId; me.token = d.token; localStorage.setItem("uno_token", d.token); localStorage.setItem("uno_name", me.name); if (d.code) localStorage.setItem("uno_code", d.code); screen = "lobby"; err = ""; render(); });
@@ -68,7 +68,7 @@ function render() {
     return game();
   } catch (e) { app.innerHTML = "<p class='err'>" + esc(e.message) + "</p>"; }
 }
-function ver() { return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V23</p>"; }
+function ver() { return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V24</p>"; }
 function home() { app.innerHTML = "<div class=\"logo\">UNO</div><p class=\"sub\" style=\"text-align:center\">Telefonlardan kodla katil</p><button class=\"btn btn-main\" onclick=\"goCreate()\">Oyun kur</button><button class=\"btn btn-ghost\" onclick=\"goJoin()\">Koda katil</button><button class=\"btn btn-ghost\" onclick=\"goCards()\">Ozel kartlar</button><button class=\"btn btn-ghost\" onclick=\"goCounts()\">Kart sayilari</button><button class=\"btn btn-ghost\" onclick=\"goRules()\">Kurallar</button><p class=\"err\">" + esc(err) + "</p>" + ver(); }
 function create() { app.innerHTML = "<h1>Oyun kur</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Toplam oyuncu</label><select id=\"max\"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select><button class=\"btn btn-main\" onclick=\"doCreate()\">Kur ve kod al</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
 function join() { app.innerHTML = "<h1>Oyuna katil / geri don</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Oyun kodu</label><input id=\"code\" maxlength=\"6\" inputmode=\"numeric\" /><button class=\"btn btn-main\" onclick=\"doJoin()\">Katil</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver(); }
@@ -218,12 +218,13 @@ function game() {
   if (note) html += "<div class=\"panel warn one\">" + esc(note) + "</div>";
   if (state.paused) html += "<div class=\"panel warn one\">Siradaki oyuncu koptu, ayni ad ile donmeli.</div>";
   html += "<div class=\"hud\"><div class=\"hud-left\">";
-  html += "<button class=\"btn btn-main\" onclick=\"pressUno()\">UNO!</button>";
-  html += "<button class=\"btn btn-ghost\" " + (canPass ? "" : "disabled") + " onclick=\"passDrawn()\">Pas</button>";
-  html += "<button class=\"btn btn-ghost\" onclick=\"showScores=true;render()\">Skor</button></div>";
+  html += "<button class=\"btn btn-main btn-tile\" onclick=\"pressUno()\">UNO!</button>";
+  html += "<button class=\"btn btn-ghost btn-tile\" " + (canPass ? "" : "disabled") + " onclick=\"passDrawn()\">Pas</button>";
+  html += "</div>";
   html += "<div class=\"hud-right\"><div class=\"draw-pile" + (drawOn ? "" : " off") + "\" onclick=\"tapDeck()\"><div class=\"back bigback\"></div>";
   if (drawOn) html += "<div class=\"draw-label\">Kart<br>cek</div>";
-  html += "<div class=\"deck-left\">" + (g.deckCount != null ? g.deckCount : "0") + "</div></div></div></div>";
+  html += "</div><div class=\"deck-left\">" + (g.deckCount != null ? g.deckCount : "0") + "</div></div></div>";
+  html += "<button class=\"mini-btn\" onclick=\"showScores=true;render()\">Skor</button>";
   html += tableHtml();
   html += "<div class=\"hand\">" + (g.hand || []).map(function (c, idx) {
     var cls = "";
