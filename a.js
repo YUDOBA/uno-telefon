@@ -10,7 +10,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.get("/health", function (req, res) { res.send("ok"); });
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V21";
+const VERSION = "V23";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
@@ -132,6 +132,7 @@ function publicRoom(room, viewerId) {
   let actor = g ? g.currentId : null;
   if (g && g.drawQueue && g.drawQueue.length) actor = g.drawQueue[0].playerId;
   const actorP = actor && room.players.find(function (x) { return x.id === actor; });
+  const penal = !!(g && ((g.plusStack || 0) > 0 || (g.drawQueue && g.drawQueue.length)));
   return {
     version: VERSION, code: room.code, maxPlayers: room.maxPlayers, hostId: room.hostId, status: room.status,
     paused: !!(g && room.status === "playing" && actorP && !actorP.connected),
@@ -145,6 +146,7 @@ function publicRoom(room, viewerId) {
         id: p.id, name: p.name, connected: p.connected,
         cardCount: g && g.hands && g.hands[p.id] ? g.hands[p.id].length : 0,
         saidUno: g ? !!g.saidUno[p.id] : false, isTurn: actor === p.id,
+        isPenalty: !!(actor === p.id && penal),
         score: (room.scores && room.scores[p.id]) || 0
       };
     }),
@@ -154,9 +156,11 @@ function publicRoom(room, viewerId) {
       notice: g.notice || "", noticeYou: g.noticeYou && g.noticeYou[viewerId] ? g.noticeYou[viewerId] : "",
       hand: g.hands[viewerId] || [], deckCount: g.deck.length,
       plusStack: g.plusStack || 0,
-      stackKind: (g.plusStack > 0 || (g.drawQueue && g.drawQueue.length)) ? g.stackKind : null,
+      stackKind: penal ? g.stackKind : null,
       drawQueue: g.drawQueue || [],
-      canPass: !!(g.pendingDrawn && g.pendingDrawn.playerId === viewerId)
+      canPass: !!(g.pendingDrawn && g.pendingDrawn.playerId === viewerId),
+      drewOnce: !!(g.pendingDrawn && g.pendingDrawn.playerId === viewerId),
+      isPenalty: penal
     } : null
   };
 }
