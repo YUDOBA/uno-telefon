@@ -6,7 +6,6 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Uno Telefon V33</title>
   <link rel="stylesheet" href="/style.css?v=33" />
-  <link rel="stylesheet" href="/extra.css?v=33" />
 </head>
 <body>
   <div id="app">
@@ -19,5 +18,18 @@
   <script src="/v31.js?v=33"></script>
   <script src="/v32.js?v=33"></script>
   <script src="/v33.js?v=33"></script>
+  <script>
+    create = function () {
+      app.innerHTML = "<h1>Oyun kur</h1>" +
+        "<div class='panel'><label>Adin</label><input id='name' maxlength='16' value='" + esc(me.name) + "' />" +
+        "<label>Toplam oyuncu</label><select id='max'><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>" +
+        "<div class='panel' style='border:2px solid #ffd000'><label>SIRA SURESI</label>" +
+        "<select id='tmode' onchange=\"var w=document.getElementById('tsecwrap');if(w)w.style.display=this.value==='0'?'none':'block'\"><option value='0'>Suresiz</option><option value='1'>Sureli</option></select>" +
+        "<div id='tsecwrap' style='display:none'><label>Saniye</label><input id='tsec' inputmode='numeric' value='20'></div></div>" +
+        "<div class='panel'><button class='btn btn-main' onclick='doCreate()'>Kur ve kod al</button>" +
+        "<button class='btn btn-ghost' onclick='goHome()'>Geri</button><p class='err'>" + esc(err) + "</p></div>" +
+        "<p class='sub' style='text-align:center;margin-top:18px'>Uno Telefon V33</p>";
+    };
+  </script>
 </body>
 </html>
