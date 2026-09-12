@@ -29,4 +29,14 @@ scoreTable = function(){
   }
   return h;
 };
+setInterval(function(){
+  var el=document.getElementById("hud-clock");
+  if(!el || el.textContent!=="0") return;
+  if(!state||!state.game||state.game.currentId!==me.playerId) return;
+  var sec=0;
+  try{ sec=parseInt(localStorage.getItem("uno_tsec")||"0",10)||0; }catch(e){}
+  if(state.turnSeconds) sec=state.turnSeconds;
+  if(!sec) return;
+  socket.emit("turnTimeout", { sec: sec });
+}, 400);
 try { if (screen==="lobby") lobby(); } catch(e) {}
