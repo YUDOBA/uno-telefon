@@ -1,12 +1,4 @@
 app.get("/reset", function (req, res) {
-  rooms.forEach(function (room) {
-    room.status = "lobby";
-    room.game = null;
-    room.roundNow = 1;
-    room.scores = {};
-    room.timeScores = {};
-    emitRoom(room);
-  });
   rooms.clear();
   try { fs.writeFileSync(STORE, "[]"); } catch (e) {}
   res.type("text").send("ok");
@@ -16,6 +8,7 @@ function startTurnClock(room) {
   if (!g) return;
   const sec = Number(room.turnSeconds) || 0;
   g.turnEndsAt = sec > 0 ? (Date.now() + sec * 1000) : 0;
+  g.turnSeconds = sec;
 }
 var _emitRoom = emitRoom;
 emitRoom = function (room) {
@@ -62,29 +55,28 @@ io.on("connection", function (socket) {
     room.turnSeconds = Math.max(0, Math.min(180, parseInt(d && d.turnSeconds, 10) || 0));
     emitRoom(room);
   });
+  socket.on("start", function () {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room || !room.game) return;
+    startTurnClock(room);
+    if (room.turnSeconds) {
+      room.game.notice = "Sira suresi " + room.turnSeconds + " saniye.";
+      room.game.lastAction = room.game.notice;
+    }
+    emitRoom(room);
+  });
   socket.on("turnTimeout", function () {
     const room = rooms.get(socket.data.roomCode);
     if (!room || !room.game || room.status !== "playing") return;
     const g = room.game;
     const pid = socket.data.playerId;
     if (!room.turnSeconds || g.currentId !== pid) return;
-    if (!g.turnEndsAt || Date.now() + 250 < g.turnEndsAt) return;
     if (!room.timeScores) room.timeScores = {};
     room.timeScores[pid] = (room.timeScores[pid] || 0) + 1;
     startTurnClock(room);
     g.lastAction = nameOf(room, pid) + " sure doldu. +1 sure puani.";
     g.notice = g.lastAction;
     emitRoom(room);
-  });
-  socket.on("uno", function () {
-    const room = rooms.get(socket.data.roomCode);
-    if (!room || !room.game) return;
-    const g = room.game;
-    const pid = socket.data.playerId;
-    const penal = !!(g.plusStack || (g.drawQueue && g.drawQueue.length));
-    if (penal || !g.hands[pid] || g.hands[pid].length !== 2 || g.currentId !== pid) {
-      g.saidUno[pid] = false;
-    }
   });
   socket.on("chat", function (d) {
     const room = rooms.get(socket.data.roomCode);
