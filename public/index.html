@@ -6,18 +6,56 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Uno Telefon</title>
-  <link rel="stylesheet" href="/style.css?v=37" />
-  <link rel="stylesheet" href="/extra.css?v=37" />
+  <link rel="stylesheet" href="/style.css?v=38" />
+  <link rel="stylesheet" href="/extra.css?v=38" />
 </head>
 <body>
   <div id="app">
     <div class="logo">UNO</div>
-    <p class="sub" style="text-align:center">Uno Telefon V37</p>
+    <p class="sub" style="text-align:center">Uno Telefon V38</p>
   </div>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/c1.js?v=37"></script>
-  <script src="/c2.js?v=37"></script>
-  <script src="/c1p.js?v=37"></script>
-  <script src="/boot.js?v=37"></script>
+  <script src="/c1.js?v=38"></script>
+  <script>
+    VERSION = "V38";
+    function ver(){ return "<p class='sub' style='text-align:center;margin-top:18px'>Uno Telefon V38</p>"; }
+    function sureBox(){
+      return "<div class='panel' style='border:2px solid #ffd000'><label>SIRA SURESI</label>" +
+        "<select id='tmode' onchange=\"var w=document.getElementById('tsecwrap');if(w)w.style.display=this.value==='0'?'none':'block'\">" +
+        "<option value='0'>Suresiz</option><option value='1'>Sureli</option></select>" +
+        "<div id='tsecwrap' style='display:none'><label>Saniye</label><input id='tsec' inputmode='numeric' value='20'></div></div>";
+    }
+    function readTurnSec(){
+      var mode=document.getElementById('tmode');
+      var secEl=document.getElementById('tsec');
+      if(!mode||mode.value==='0') return 0;
+      var n=parseInt(secEl&&secEl.value,10)||20;
+      if(n<5)n=5; if(n>180)n=180; return n;
+    }
+    home = function(){
+      app.innerHTML = "<div class='logo'>UNO</div><p class='sub' style='text-align:center'>Telefonlardan kodla katil</p>" +
+        sureBox() +
+        "<button class='btn btn-main' onclick='goCreate()'>Oyun kur</button>" +
+        "<button class='btn btn-ghost' onclick='goJoin()'>Koda katil</button>" +
+        "<button class='btn btn-ghost' onclick='goCards()'>Ozel kartlar</button>" +
+        "<button class='btn btn-ghost' onclick='goCounts()'>Kart sayilari</button>" +
+        "<button class='btn btn-ghost' onclick='goRules()'>Kurallar</button>" +
+        "<p class='err'>"+esc(err)+"</p>"+ver();
+    };
+    create = function(){
+      app.innerHTML = "<h1>Oyun kur</h1><div class='panel'><label>Adin</label><input id='name' maxlength='16' value='"+esc(me.name)+"' />" +
+        "<label>Toplam oyuncu</label><select id='max'><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>" +
+        sureBox() +
+        "<div class='panel'><button class='btn btn-main' onclick='doCreate()'>Kur ve kod al</button>" +
+        "<button class='btn btn-ghost' onclick='goHome()'>Geri</button><p class='err'>"+esc(err)+"</p></div>"+ver();
+    };
+    doCreate = function(){
+      var name=((document.getElementById('name')||{}).value||'').trim()||'Kurucu';
+      me.name=name;
+      socket.emit('create',{name:name,maxPlayers:(document.getElementById('max')||{}).value||4,turnSeconds:readTurnSec()});
+    };
+  </script>
+  <script src="/c2.js?v=38"></script>
+  <script src="/c1p.js?v=38"></script>
 </body>
 </html>
