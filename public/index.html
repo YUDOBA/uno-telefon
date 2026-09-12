@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>Uno Telefon</title>
+  <title>Uno Telefon V39</title>
   <link rel="stylesheet" href="/style.css?v=39" />
 </head>
 <body>
@@ -14,11 +13,10 @@
     <p class="sub" style="text-align:center">Uno Telefon V39</p>
   </div>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/c1.js?v=39"></script>
+  <script src="/c1a.js?v=39"></script>
+  <script src="/c1b.js?v=39"></script>
   <script src="/c2.js?v=39"></script>
   <script>
-    VERSION = "V39";
-    function ver(){ return "<p class='sub' style='text-align:center;margin-top:18px'>Uno Telefon V39</p>"; }
     var SURE_HTML = "<div class='panel' style='border:2px solid #ffd000'><label>SIRA SURESI</label>" +
       "<select id='tmode' onchange=\"var w=document.getElementById('tsecwrap');if(w)w.style.display=this.value==='0'?'none':'block'\">" +
       "<option value='0'>Suresiz</option><option value='1'>Sureli</option></select>" +
@@ -30,32 +28,26 @@
       var n=parseInt(secEl&&secEl.value,10)||20;
       if(n<5)n=5; if(n>180)n=180; return n;
     }
-    var _create0 = create;
+    var _c = create;
     create = function(){
-      _create0();
+      _c();
       if (!document.getElementById('tmode')) {
         var first = app.querySelector('.panel');
         if (first) first.insertAdjacentHTML('afterend', SURE_HTML);
-        else app.insertAdjacentHTML('afterbegin', SURE_HTML);
       }
     };
-    var _lobby0 = lobby;
+    var _l = lobby;
     lobby = function(){
-      _lobby0();
-      if (!state || state.hostId !== me.playerId) return;
-      if (document.getElementById('tmode')) return;
+      _l();
+      if (!state || state.hostId !== me.playerId || document.getElementById('tmode')) return;
       var r = document.getElementById('rounds');
       if (r && r.parentNode) r.parentNode.insertAdjacentHTML('beforeend', SURE_HTML);
-      else app.insertAdjacentHTML('beforeend', SURE_HTML);
     };
     doCreate = function(){
       var name=((document.getElementById('name')||{}).value||'').trim()||'Kurucu';
       me.name=name;
       socket.emit('create',{name:name,maxPlayers:(document.getElementById('max')||{}).value||4,turnSeconds:readTurnSec()});
     };
-    var _home0 = home;
-    home = function(){ _home0(); };
-    try { home(); } catch(e) {}
   </script>
 </body>
 </html>
