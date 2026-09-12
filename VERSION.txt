@@ -1,2 +1,1 @@
-V0 previous
-V1 circular table, direction, penalty split, single draws, reconnect wait
+V30
