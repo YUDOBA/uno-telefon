@@ -1,4 +1,5 @@
 VERSION = "V36";
+var stayChat = false;
 function ver(){ return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V36</p>"; }
 function readTurnSec() {
   var mode = document.getElementById("tmode");
@@ -33,8 +34,8 @@ lobby = function () {
   box.innerHTML = "<label>Sira suresi</label><select id=\"tmode\" onchange=\"onTurnMode()\"><option value=\"0\">Suresiz</option><option value=\"1\">Sureli</option></select><div id=\"tsecwrap\" style=\"display:none\"><label>Saniye</label><input id=\"tsec\" inputmode=\"numeric\" value=\"20\" /></div>";
   hostPanel.appendChild(box);
 };
-function goChat(){ screen = "chat"; render(); }
-function backPlay(){ showScores = false; screen = "game"; render(); }
+function goChat(){ stayChat = true; screen = "chat"; render(); }
+function backPlay(){ stayChat = false; showScores = false; screen = "game"; render(); }
 function askAbort(){ if (confirm("Oyunu bitirmek istediginize emin misiniz?")) socket.emit("abortGame"); }
 function sendChat(){
   var el = document.getElementById("chat-in"); var t = el ? el.value.trim() : "";
@@ -59,6 +60,7 @@ function chatScreen(){
 }
 var _renderP = render;
 render = function () {
+  if (stayChat && state && state.status === "playing") return chatScreen();
   if (screen === "chat") return chatScreen();
   if (showScores && state) {
     var who="", mine=false;
@@ -81,7 +83,7 @@ function paintHud(){
   var hud = document.querySelector(".hud-left");
   if (!hud) return;
   if (!hud.querySelector(".btn-tiny")) {
-    hud.insertAdjacentHTML("beforeend", "<button class=\"btn btn-ghost btn-tiny\" onclick=\"showScores=true;render()\">Skor</button><button class=\"btn btn-ghost btn-tiny\" onclick=\"goChat()\">Mesaj</button>");
+    hud.insertAdjacentHTML("beforeend", "<button class=\"btn btn-ghost btn-tiny\" onclick=\"showScores=true;stayChat=false;render()\">Skor</button><button class=\"btn btn-ghost btn-tiny\" onclick=\"goChat()\">Mesaj</button>");
   }
   var mini = document.querySelector(".mini-btn");
   if (mini && /Skor/.test(mini.textContent||"")) mini.style.display = "none";
