@@ -200,9 +200,26 @@ function closeRoom() {
 }
 function goHome() { screen = "home"; err = ""; render(); }
 function goCreate() { goFull(); screen = "create"; err = ""; render(); }
-function goJoin() { goFull(); screen = "join"; err = ""; render(); }
+function goJoin() { goFull(); screen = "join"; render(); }
 function doCreate() { var name = document.getElementById("name").value.trim() || "Kurucu"; me.name = name; socket.emit("create", { name: name, maxPlayers: document.getElementById("max").value }); }
-function doJoin() { var name = document.getElementById("name").value.trim() || "Oyuncu"; me.name = name; socket.emit("join", { name: name, code: document.getElementById("code").value.trim(), token: me.token }); }
+function doJoin() {
+  var nameEl = document.getElementById("name");
+  var codeEl = document.getElementById("code");
+  var name = (nameEl && nameEl.value.trim()) || "Oyuncu";
+  var code = (codeEl && codeEl.value.trim()) || "";
+  me.name = name;
+  try { localStorage.setItem("uno_join_code", code); localStorage.setItem("uno_name", name); } catch (e) {}
+  if (!/^\d{4}$/.test(code)) { err = "4 haneli oyun kodunu yaz."; screen = "join"; render(); return; }
+  socket.emit("join", { name: name, code: code, token: me.token });
+}
+var _joinFn = join;
+join = function () {
+  _joinFn();
+  var last = "";
+  try { last = localStorage.getItem("uno_join_code") || ""; } catch (e) {}
+  var inp = document.getElementById("code");
+  if (inp && last && !inp.value) inp.value = last;
+};
 var _lobbyFn = lobby;
 lobby = function () {
   _lobbyFn();
