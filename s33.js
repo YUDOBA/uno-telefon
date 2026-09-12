@@ -72,17 +72,19 @@ io.on("connection", function (socket) {
   socket.on("turnTimeout", function () {
     const room = rooms.get(socket.data.roomCode);
     if (!room || !room.game || !room.turnSeconds) return;
+    if (room._toAt && Date.now() - room._toAt < 2000) return;
     const g = room.game;
     let actor = g.currentId;
     if (g.drawQueue && g.drawQueue.length) actor = g.drawQueue[0].playerId;
     if (actor !== socket.data.playerId) return;
+    room._toAt = Date.now();
     if (!room.timeScores) room.timeScores = {};
     room.timeScores[actor] = (room.timeScores[actor] || 0) + 1;
     room.turnEndsAt = Date.now() + room.turnSeconds * 1000;
     room._clockActor = actor;
     g.turnEndsAt = room.turnEndsAt;
     g.turnSeconds = room.turnSeconds;
-    g.notice = "Sure bitti. +1 sure puani.";
+    g.notice = "Sure doldu: +1 sure puani";
     emitRoom(room);
   });
 });
