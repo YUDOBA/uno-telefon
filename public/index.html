@@ -26,6 +26,7 @@
   </div>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/c1.js?v=38"></script>
+  <script src="/c2.js?v=38"></script>
   <script>
     function readTurnSec(){
       var mode=document.getElementById('tmode');
@@ -39,16 +40,13 @@
       me.name=name;
       socket.emit('create',{name:name,maxPlayers:(document.getElementById('max')||{}).value||4,turnSeconds:readTurnSec()});
     };
-    var _goCreate = typeof goCreate === 'function' ? goCreate : function(){};
-    goCreate = function(){ _goCreate(); };
-  </script>
-  <script src="/c2.js?v=38"></script>
-  <script>
-    doCreate = function(){
-      var name=((document.getElementById('name')||{}).value||'').trim()||'Kurucu';
-      me.name=name;
-      socket.emit('create',{name:name,maxPlayers:(document.getElementById('max')||{}).value||4,turnSeconds:readTurnSec()});
+    var _render0 = render;
+    render = function(){
+      _render0();
+      var box=document.getElementById('sure-fixed');
+      if(box) box.style.display = (screen==='home'||screen==='create'||screen==='lobby') ? 'block' : 'none';
     };
+    try { render(); } catch(e) {}
   </script>
 </body>
 </html>
