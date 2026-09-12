@@ -4,32 +4,36 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>Uno Telefon V36</title>
-  <link rel="stylesheet" href="/style.css?v=36" />
+  <title>Uno Telefon V37</title>
+  <link rel="stylesheet" href="/style.css?v=37" />
 </head>
 <body>
   <div id="turn-clock" style="position:fixed;top:6px;right:6px;z-index:9999;min-width:52px;padding:6px 10px;border-radius:10px;background:#1a1408;border:2px solid #ffd000;color:#ffd000;font-weight:800;font-size:16px;text-align:center">-</div>
   <div id="app">
     <div class="logo">UNO</div>
-    <p class="sub" style="text-align:center">Uno Telefon V36</p>
+    <p class="sub" style="text-align:center">Uno Telefon V37</p>
   </div>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/c1.js?v=36"></script>
-  <script src="/c2.js?v=36"></script>
-  <script src="/v31.js?v=36"></script>
-  <script src="/v32.js?v=36"></script>
-  <script src="/v33.js?v=36"></script>
-  <script src="/v35.js?v=36"></script>
-  <script src="/v36.js?v=36"></script>
+  <script src="/c1.js?v=37"></script>
+  <script src="/c2.js?v=37"></script>
+  <script src="/v31.js?v=37"></script>
+  <script src="/v32.js?v=37"></script>
+  <script src="/v33.js?v=37"></script>
+  <script src="/v35.js?v=37"></script>
+  <script src="/v36.js?v=37"></script>
   <script>
-    function ver(){ return "<p class='sub' style='text-align:center;margin-top:18px'>Uno Telefon V36</p>"; }
+    function ver(){ return "<p class='sub' style='text-align:center;margin-top:18px'>Uno Telefon V37</p>"; }
     create = function () {
+      var sec=0; try{ sec=parseInt(localStorage.getItem("uno_tsec")||"0",10)||0; }catch(e){}
       app.innerHTML = "<h1>Oyun kur</h1>" +
         "<div class='panel'><label>Adin</label><input id='name' maxlength='16' value='" + esc(me.name) + "' />" +
         "<label>Toplam oyuncu</label><select id='max'><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>" +
         "<div class='panel' style='border:2px solid #ffd000'><label>SIRA SURESI</label>" +
-        "<select id='tmode' onchange=\"var w=document.getElementById('tsecwrap');if(w)w.style.display=this.value==='0'?'none':'block'\"><option value='0'>Suresiz</option><option value='1'>Sureli</option></select>" +
-        "<div id='tsecwrap' style='display:none'><label>Saniye</label><input id='tsec' inputmode='numeric' value='20'></div></div>" +
+        "<p style='text-align:center;font-weight:800'>" + (sec?("Sureli "+sec+" sn"):"Suresiz") + "</p>" +
+        "<div style='display:flex;gap:8px'><button class='btn "+(sec?"btn-ghost":"btn-main")+"' type='button' onclick=\"localStorage.setItem('uno_tsec','0');create()\">Suresiz</button>" +
+        "<button class='btn "+(sec?"btn-main":"btn-ghost")+"' type='button' onclick=\"localStorage.setItem('uno_tsec', document.getElementById('tsec').value||20);create()\">Sureli</button></div>" +
+        "<div id='tsecwrap' style='display:"+(sec?"block":"none")+"'><label>Saniye</label><input id='tsec' inputmode='numeric' value='"+(sec||20)+"'></div>" +
+        "<select id='tmode' style='display:none'><option value='"+(sec?"1":"0")+"' selected></option></select></div>" +
         "<div class='panel'><button class='btn btn-main' onclick='doCreate()'>Kur ve kod al</button>" +
         "<button class='btn btn-ghost' onclick='goHome()'>Geri</button><p class='err'>" + esc(err) + "</p></div>" + ver();
     };
