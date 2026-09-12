@@ -11,12 +11,14 @@
 <body>
   <div id="app">
     <div class="logo">UNO</div>
-    <p class="sub" style="text-align:center">Uno Telefon</p>
+    <p class="sub" style="text-align:center">Uno Telefon V39</p>
   </div>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/c1.js?v=39"></script>
   <script src="/c2.js?v=39"></script>
   <script>
+    VERSION = "V39";
+    function ver(){ return "<p class='sub' style='text-align:center;margin-top:18px'>Uno Telefon V39</p>"; }
     var SURE_HTML = "<div class='panel' style='border:2px solid #ffd000'><label>SIRA SURESI</label>" +
       "<select id='tmode' onchange=\"var w=document.getElementById('tsecwrap');if(w)w.style.display=this.value==='0'?'none':'block'\">" +
       "<option value='0'>Suresiz</option><option value='1'>Sureli</option></select>" +
@@ -31,10 +33,11 @@
     var _create0 = create;
     create = function(){
       _create0();
-      if (document.getElementById('tmode')) return;
-      var first = app.querySelector('.panel');
-      if (first) first.insertAdjacentHTML('afterend', SURE_HTML);
-      else app.insertAdjacentHTML('afterbegin', SURE_HTML);
+      if (!document.getElementById('tmode')) {
+        var first = app.querySelector('.panel');
+        if (first) first.insertAdjacentHTML('afterend', SURE_HTML);
+        else app.insertAdjacentHTML('afterbegin', SURE_HTML);
+      }
     };
     var _lobby0 = lobby;
     lobby = function(){
@@ -50,6 +53,9 @@
       me.name=name;
       socket.emit('create',{name:name,maxPlayers:(document.getElementById('max')||{}).value||4,turnSeconds:readTurnSec()});
     };
+    var _home0 = home;
+    home = function(){ _home0(); };
+    try { home(); } catch(e) {}
   </script>
 </body>
 </html>
