@@ -28,7 +28,7 @@ var _lobby = lobby;
 lobby = function () {
   _lobby();
   if (!state || state.hostId !== me.playerId) return;
-  if (app.innerHTML.indexOf("id=\"tmode\"") >= 0) return;
+  if (app.innerHTML.indexOf('id="tmode"') >= 0) return;
   var ts = state.turnSeconds || 0;
   var extra = "<label>Sure</label><select id=\"tmode\" onchange=\"setTurnSeconds()\"><option value=\"0\""+(ts?"":" selected")+">Suresiz</option><option value=\"1\""+(ts?" selected":"")+">Sureli</option></select>";
   if (ts) extra += "<label>Sira suresi (sn)</label><input id=\"tsec\" inputmode=\"numeric\" value=\""+ts+"\" onchange=\"setTurnSeconds()\" />";
@@ -46,7 +46,6 @@ function setTurnSeconds() {
   if (mode && mode.value !== "0") sec = Math.max(5, Math.min(180, parseInt(secEl && secEl.value, 10) || 20));
   socket.emit("setTurnSeconds", { turnSeconds: sec });
 }
-var _doCreate = doCreate;
 doCreate = function () {
   var name = (document.getElementById("name") && document.getElementById("name").value.trim()) || "Kurucu";
   me.name = name;
@@ -64,10 +63,32 @@ pressUno = function () {
   if (penal || n !== 2 || !isActor()) { err = "Uno denilemez."; render(); return; }
   _pressUno();
 };
-var _scoreTable = scoreTable;
 scoreTable = function () {
-  var html = _scoreTable();
-  return html;
+  var rows = (state.players || []).slice().sort(function (a, b) {
+    var ta = a.totalScore != null ? a.totalScore : (a.score || 0);
+    var tb = b.totalScore != null ? b.totalScore : (b.score || 0);
+    return ta - tb;
+  });
+  var ready = state.readyNext || {};
+  var nReady = 0; (state.players||[]).forEach(function(p){ if(ready[p.id]) nReady++; });
+  var h = "<div class=\"panel\"><h2>Skor</h2><p>Tur " + (state.roundNow || 1) + " / " + (state.roundsTotal || 1) + "</p>";
+  h += "<div class=\"row\" style=\"font-size:12px\"><span>Oyuncu</span><span>Kart / Sure / Toplam</span></div>";
+  rows.forEach(function (p, i) {
+    var extra = state.lastRoundPts && state.lastRoundPts[p.id] != null ? " (tur +" + state.lastRoundPts[p.id] + ")" : "";
+    var tick = ready[p.id] ? " hazir" : "";
+    var cs = p.score || 0, ts = p.timeScore || 0, tot = p.totalScore != null ? p.totalScore : (cs + ts);
+    h += "<div class=\"row\"><span>" + (i + 1) + ". " + esc(p.name) + tick + extra + "</span><span>" + cs + " / " + ts + " / <b>" + tot + "</b></span></div>";
+  });
+  if (state.status === "playing") h += "<button class=\"btn btn-ghost\" onclick=\"showScores=false;render()\">Oyuna don</button>";
+  if (state.status === "winnerShow" && !state.gameOver) {
+    if (!(state.readyNext||{})[me.playerId]) h += "<button class=\"btn btn-main\" onclick=\"socket.emit('readyNext')\">Sonraki tur</button><p class=\"sub\">Herkes basinca tur baslar ("+nReady+"/"+(state.players||[]).length+")</p>";
+    else h += "<p class=\"sub\">Hazirsin. Digerleri bekleniyor ("+nReady+"/"+(state.players||[]).length+")</p>";
+  }
+  if (state.status === "winnerShow" && state.gameOver) {
+    h += "<p><b>En dusuk toplam kazanir: "+esc(winnerName())+"</b></p>";
+    if (state.hostId === me.playerId) h += "<button class=\"btn btn-main\" onclick=\"socket.emit('again')\">Yeni oyun</button>";
+  }
+  return h + "</div>";
 };
 var _winnerName = winnerName;
 winnerName = function () {
@@ -98,7 +119,6 @@ game = function () {
   var right = hud.querySelector(".hud-right");
   if (right) hud.insertBefore(mid, right);
   else hud.appendChild(mid);
-  var st = app.querySelector(".panel h2");
 };
 var _wake = null;
 function keepAwake() {
@@ -131,7 +151,6 @@ function sfxDraw() { tone(240, 0.1, "sine", 0.07); }
 function sfxPenalty() { tone(180, 0.18, "sawtooth", 0.1); setTimeout(function(){ tone(140, 0.22, "sawtooth", 0.1); }, 140); }
 function sfxTick() { tone(880, 0.06, "square", 0.06); setTimeout(function(){ tone(620, 0.06, "square", 0.05); }, 80); }
 document.addEventListener("click", function () { try { audioCtx(); } catch (e) {} }, true);
-var _cf = socket._callbacks && socket._callbacks["$cardFly"];
 socket.on("cardFly", function (d) {
   if (!d || !d.card) return;
   var t = d.card.type;
