@@ -22,6 +22,7 @@ publicRoom = function (room, viewerId) {
   const out = _publicRoom(room, viewerId);
   out.turnSeconds = room.turnSeconds || 0;
   out.timeScores = room.timeScores || {};
+  out.chat = (room.chat || []).slice(-80);
   (out.players || []).forEach(function (p) {
     p.timeScore = (room.timeScores && room.timeScores[p.id]) || 0;
     p.totalScore = (p.score || 0) + p.timeScore;
@@ -39,6 +40,7 @@ io.on("connection", function (socket) {
     if (!room) return;
     room.turnSeconds = Math.max(0, Math.min(180, parseInt(d && d.turnSeconds, 10) || 0));
     if (!room.timeScores) room.timeScores = {};
+    if (!room.chat) room.chat = [];
     emitRoom(room);
   });
   socket.on("setTurnSeconds", function (d) {
@@ -70,5 +72,30 @@ io.on("connection", function (socket) {
     if (penal || !g.hands[pid] || g.hands[pid].length !== 2 || g.currentId !== pid) {
       g.saidUno[pid] = false;
     }
+  });
+  socket.on("chat", function (d) {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return;
+    const text = String((d && d.text) || "").replace(/\s+/g, " ").trim().slice(0, 160);
+    if (!text) return;
+    if (!room.chat) room.chat = [];
+    room.chat.push({ name: nameOf(room, socket.data.playerId), text: text, ts: Date.now() });
+    if (room.chat.length > 80) room.chat = room.chat.slice(-80);
+    emitRoom(room);
+  });
+  socket.on("abortGame", function () {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room || room.hostId !== socket.data.playerId) return;
+    room.status = "lobby";
+    room.game = null;
+    room.roundNow = 1;
+    room.scores = {};
+    room.timeScores = {};
+    room.lastRoundPts = {};
+    room.lastWinnerId = null;
+    room.gameOver = false;
+    room.readyNext = {};
+    room.sawScores = {};
+    emitRoom(room);
   });
 });
