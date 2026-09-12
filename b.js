@@ -19,9 +19,15 @@ io.on("connection", function (socket) {
   });
   socket.on("join", function (d) {
     d = d || {};
-    let room = rooms.get(normCode(d.code));
-    if (!room) { loadRooms(); room = rooms.get(normCode(d.code)); }
-    if (!room) return socket.emit("errorMsg", "Oda yok. Kurucu sayfayi acik tutsun ve oyunu tekrar kursun. Yeni kodu paylasin.");
+    const codeIn = normCode(d.code);
+    if (!codeIn || codeIn.length !== 4) return socket.emit("errorMsg", "4 haneli oyun kodunu yaz.");
+    let room = rooms.get(codeIn);
+    if (!room) { loadRooms(); room = rooms.get(codeIn); }
+    if (!room) {
+      const keys = [];
+      rooms.forEach(function (_v, k) { keys.push(k); });
+      return socket.emit("errorMsg", "Oda yok (" + codeIn + "). Kurucu lobi ekranini acik tutsun. Kodlar su an: " + (keys.join(",") || "yok") + ".");
+    }
     const nm = String(d.name || "Oyuncu").slice(0, 16);
     let existing = room.players.find(function (p) { return d.token && p.token === d.token; });
     if (!existing) existing = room.players.find(function (p) { return !p.connected && p.name === nm; });
@@ -313,7 +319,42 @@ io.on("connection", function (socket) {
     if (!room || room.hostId !== socket.data.playerId) return;
     room.status = "lobby"; room.game = null; room.roundNow = 1; room.scores = {}; emitRoom(room);
   });
-  socket.on("ping", function () {});
+  socket.on("leave", function () {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) { socket.data.roomCode = null; socket.data.playerId = null; return; }
+    const pid = socket.data.playerId;
+    if (room.status === "lobby") {
+      room.players = room.players.filter(function (x) { return x.id !== pid; });
+      if (room.seats) room.seats = room.seats.filter(function (id) { return id !== pid; });
+      if (!room.players.length || room.hostId === pid) {
+        rooms.delete(room.code);
+        saveRooms();
+      } else {
+        if (room.hostId === pid) room.hostId = room.players[0].id;
+        emitRoom(room);
+      }
+    } else {
+      const p = room.players.find(function (x) { return x.id === pid; });
+      if (p) { p.connected = false; p.socketId = null; }
+      emitRoom(room);
+    }
+    socket.leave(room.code);
+    socket.data.roomCode = null;
+    socket.data.playerId = null;
+  });
+  socket.on("touch", function () {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) { socket.emit("roomLost"); return; }
+    const p = room.players.find(function (x) { return x.id === socket.data.playerId; });
+    if (p) { p.connected = true; p.socketId = socket.id; }
+    saveRooms();
+  });
+  socket.on("ping", function () {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return;
+    const p = room.players.find(function (x) { return x.id === socket.data.playerId; });
+    if (p) { p.connected = true; p.socketId = socket.id; }
+  });
   socket.on("disconnect", function () {
     const room = rooms.get(socket.data.roomCode); if (!room) return;
     const deadId = socket.id;
