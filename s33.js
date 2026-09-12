@@ -1,4 +1,3 @@
-VERSION = "V33";
 const _publicRoom33 = publicRoom;
 publicRoom = function (room, viewerId) {
   const o = _publicRoom33(room, viewerId);
@@ -13,6 +12,7 @@ publicRoom = function (room, viewerId) {
     o.game.turnSeconds = room.turnSeconds || 0;
     o.game.turnEndsAt = room.turnEndsAt || 0;
   }
+  o.vPatch = "V33";
   return o;
 };
 const _emit33 = emitRoom;
