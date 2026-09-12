@@ -6,6 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Uno Telefon V39</title>
   <link rel="stylesheet" href="/style.css?v=39" />
+  <link rel="stylesheet" href="/extra.css?v=39" />
 </head>
 <body>
   <div id="app">
@@ -16,38 +17,6 @@
   <script src="/c1a.js?v=39"></script>
   <script src="/c1b.js?v=39"></script>
   <script src="/c2.js?v=39"></script>
-  <script>
-    var SURE_HTML = "<div class='panel' style='border:2px solid #ffd000'><label>SIRA SURESI</label>" +
-      "<select id='tmode' onchange=\"var w=document.getElementById('tsecwrap');if(w)w.style.display=this.value==='0'?'none':'block'\">" +
-      "<option value='0'>Suresiz</option><option value='1'>Sureli</option></select>" +
-      "<div id='tsecwrap' style='display:none'><label>Saniye</label><input id='tsec' inputmode='numeric' value='20'></div></div>";
-    function readTurnSec(){
-      var mode=document.getElementById('tmode');
-      var secEl=document.getElementById('tsec');
-      if(!mode||mode.value==='0') return 0;
-      var n=parseInt(secEl&&secEl.value,10)||20;
-      if(n<5)n=5; if(n>180)n=180; return n;
-    }
-    var _c = create;
-    create = function(){
-      _c();
-      if (!document.getElementById('tmode')) {
-        var first = app.querySelector('.panel');
-        if (first) first.insertAdjacentHTML('afterend', SURE_HTML);
-      }
-    };
-    var _l = lobby;
-    lobby = function(){
-      _l();
-      if (!state || state.hostId !== me.playerId || document.getElementById('tmode')) return;
-      var r = document.getElementById('rounds');
-      if (r && r.parentNode) r.parentNode.insertAdjacentHTML('beforeend', SURE_HTML);
-    };
-    doCreate = function(){
-      var name=((document.getElementById('name')||{}).value||'').trim()||'Kurucu';
-      me.name=name;
-      socket.emit('create',{name:name,maxPlayers:(document.getElementById('max')||{}).value||4,turnSeconds:readTurnSec()});
-    };
-  </script>
+  <script src="/ui.js?v=39"></script>
 </body>
 </html>
