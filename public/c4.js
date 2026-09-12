@@ -1,5 +1,5 @@
-VERSION = "V33";
-function ver(){ return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V33</p>"; }
+VERSION = "V34";
+function ver(){ return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V34</p>"; }
 var confirmAbort = false;
 function turnWho() {
   if (!state) return "";
