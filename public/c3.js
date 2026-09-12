@@ -1,5 +1,33 @@
-VERSION = "V31";
-function ver(){ return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V31</p>"; }
+VERSION = "V32";
+function ver(){ return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V32</p>"; }
+function markInGame(on) {
+  try {
+    if (on) localStorage.setItem("uno_ingame", "1");
+    else localStorage.removeItem("uno_ingame");
+  } catch (e) {}
+}
+socket.on("created", function () { markInGame(true); });
+socket.on("joined", function () { markInGame(true); });
+var _closeRoom = closeRoom;
+closeRoom = function () {
+  markInGame(false);
+  try { localStorage.removeItem("uno_code"); } catch (e) {}
+  _closeRoom();
+};
+socket.off("errorMsg");
+socket.on("errorMsg", function (m) {
+  m = String(m || "");
+  if (m.indexOf("Oda yok") >= 0) {
+    markInGame(false);
+    try { localStorage.removeItem("uno_code"); } catch (e) {}
+    if (screen === "home" || screen === "create" || screen === "cards" || screen === "counts" || screen === "rules") {
+      err = "";
+      return;
+    }
+  }
+  err = m;
+  render();
+});
 var _cardHtml = cardHtml;
 cardHtml = function (c, extra, idx) {
   extra = extra || "";
