@@ -46,6 +46,9 @@ input,select { width:100%; padding:14px; border-radius:12px; border:1px solid #2
 .hud-left { display:flex; flex-direction:row; gap:8px; width:auto; }
 .hud-left .btn, .btn-tile { width:66px; height:75px; margin:0; padding:4px; font-size:.82rem; line-height:1.15; border-radius:10px; }
 .hud-right { width:66px; text-align:center; flex-shrink:0; }
+.hud-mid { flex:1; display:flex; justify-content:center; align-items:center; min-height:75px; }
+.turn-clock { width:66px; height:56px; border-radius:10px; background:#13203a; border:2px solid #f5c518; color:#f5c518; font-weight:900; font-size:1.35rem; display:flex; align-items:center; justify-content:center; }
+.turn-clock.warn { background:#4a1208; border-color:#ff5a3a; color:#ffd0c8; }
 .draw-pile { position:relative; z-index:6; width:66px; height:75px; cursor:pointer; border-radius:10px; background:linear-gradient(160deg,#7a1020,#c4122f); border:2px solid #f3f3f3; box-shadow:0 6px 12px rgba(0,0,0,.35); }
 .draw-pile.off { opacity:.45; pointer-events:none; }
 .draw-pile .back, .draw-pile .bigback { display:none !important; }
