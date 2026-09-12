@@ -75,13 +75,9 @@ game = function () {
   _game2();
   var hud = app.querySelector(".hud-left");
   if (!hud) return;
-  var extra = document.getElementById("hud-under");
-  if (extra) return;
-  var wrap = document.createElement("div");
-  wrap.id = "hud-under";
-  wrap.className = "hud-under";
-  wrap.innerHTML = "<button class=\"btn btn-ghost btn-tiny\" onclick=\"goScores()\">Skor</button><button class=\"btn btn-ghost btn-tiny\" onclick=\"goChat()\">Mesaj</button>";
-  hud.parentNode.insertBefore(wrap, hud.nextSibling);
+  if (!hud.querySelector(".btn-tiny")) {
+    hud.insertAdjacentHTML("beforeend", "<button class=\"btn btn-ghost btn-tiny\" onclick=\"goScores()\">Skor</button><button class=\"btn btn-ghost btn-tiny\" onclick=\"goChat()\">Mesaj</button>");
+  }
   var mini = app.querySelector(".mini-btn");
   if (mini && mini.textContent.indexOf("Skor") >= 0) mini.style.display = "none";
 };
