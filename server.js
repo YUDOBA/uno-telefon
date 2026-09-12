@@ -5,5 +5,6 @@ eval(
   fs.readFileSync(__dirname + "/s33.js", "utf8") +
   fs.readFileSync(__dirname + "/s39.js", "utf8") +
   fs.readFileSync(__dirname + "/s44.js", "utf8") +
-  fs.readFileSync(__dirname + "/s47.js", "utf8")
+  fs.readFileSync(__dirname + "/s47.js", "utf8") +
+  fs.readFileSync(__dirname + "/s48.js", "utf8")
 );
