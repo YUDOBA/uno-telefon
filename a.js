@@ -7,10 +7,14 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" }, pingInterval: 10000, pingTimeout: 40000 });
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", function (req, res) { res.send("ok"); });
+app.get("/health", function (req, res) {
+  const codes = [];
+  rooms.forEach(function (_r, k) { codes.push(String(k)); });
+  res.json({ ok: true, n: codes.length, codes: codes, v: VERSION });
+});
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kirmizi", yellow: "Sari", green: "Yesil", blue: "Mavi" };
-const VERSION = "V27";
+const VERSION = "V30";
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 function shuffle(arr) {
   const a = arr.slice();
