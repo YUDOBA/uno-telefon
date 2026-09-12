@@ -1,0 +1,8 @@
+.hud-left { display:grid; grid-template-columns:66px 66px; gap:8px; }
+.hud-under { display:contents; }
+.btn-tiny { width:66px !important; height:28px !important; margin:0 !important; padding:0 !important; font-size:.72rem !important; line-height:28px !important; }
+.chat-box { background:#101a2c; border-radius:12px; padding:10px; height:42vh; overflow:auto; margin:10px 0; }
+.chat-line { padding:6px 0; border-bottom:1px solid #24344f; font-size:.92rem; }
+.turn-lamp { margin:8px 0; padding:8px 12px; border-radius:10px; background:#1a2740; font-weight:800; text-align:center; }
+.turn-lamp.on { background:#c9a227; color:#1a1400; animation:blink 1s linear infinite; }
+@keyframes blink { 50% { opacity:.45; } }
