@@ -1,5 +1,8 @@
 VERSION = "V33";
 function ver(){ return "<p class='sub' style='text-align:center;margin-top:18px'>Uno Telefon V33</p>"; }
+var clockStyle = document.createElement("style");
+clockStyle.textContent = ".hud{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.hud-mid{flex:1;display:flex;justify-content:center}.turn-clock{min-width:52px;height:40px;border-radius:10px;background:#1a1408;border:2px solid #ffd000;color:#ffd000;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center}.turn-clock.warn{background:#4a1008;border-color:#ff4d4d;color:#ffb0b0}";
+document.head.appendChild(clockStyle);
 function sureHtml(){
   var saved = 0;
   try { saved = parseInt(localStorage.getItem("uno_tsec")||"0",10)||0; } catch(e){}
@@ -30,15 +33,16 @@ doCreate = function(){
   try { localStorage.setItem("uno_tsec", String(sec)); } catch(e){}
   socket.emit("create", { name:name, maxPlayers:(document.getElementById("max")||{}).value||4, turnSeconds:sec });
 };
+socket.on("created", function(){
+  var sec=0; try{ sec=parseInt(localStorage.getItem("uno_tsec")||"0",10)||0; }catch(e){}
+  if(sec) socket.emit("setTurnSeconds", { turnSeconds: sec });
+});
 var _doStart33 = doStart;
 doStart = function(){
-  socket.emit("setTurnSeconds", { turnSeconds: readTurnSec() });
+  var sec=readTurnSec();
+  if(!sec){ try{ sec=parseInt(localStorage.getItem("uno_tsec")||"0",10)||0; }catch(e){} }
+  socket.emit("setTurnSeconds", { turnSeconds: sec });
   _doStart33();
-};
-create = function(){
-  app.innerHTML = "<h1>Oyun kur</h1><div class='panel'><label>Adin</label><input id='name' maxlength='16' value='"+esc(me.name)+"' /><label>Toplam oyuncu</label><select id='max'><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>" +
-    sureHtml() +
-    "<div class='panel'><button class='btn btn-main' onclick='doCreate()'>Kur ve kod al</button><button class='btn btn-ghost' onclick='goHome()'>Geri</button><p class='err'>"+esc(err)+"</p></div>" + ver();
 };
 var _lobby33 = lobby;
 lobby = function(){
@@ -48,33 +52,26 @@ lobby = function(){
   var r=document.getElementById("rounds");
   if (r && r.parentNode) r.parentNode.insertAdjacentHTML("beforeend", sureHtml());
 };
-var _score33 = scoreTable;
-scoreTable = function(){
-  var rows = (state.players || []).slice().sort(function(a,b){ return ((a.totalScore!=null?a.totalScore:a.score)||0)-((b.totalScore!=null?b.totalScore:b.score)||0); });
-  var h = "<div class='panel'><h2>Skor</h2><p>Tur "+(state.roundNow||1)+" / "+(state.roundsTotal||1)+"</p>";
-  h += "<div class='row'><span><b>Oyuncu</b></span><span><b>Kart</b> / <b>Sure</b> / <b>Toplam</b></span></div>";
-  rows.forEach(function(p){
-    var k=p.score||0, t=p.timeScore||0, tot=(p.totalScore!=null?p.totalScore:k+t);
-    h += "<div class='row'><span>"+esc(p.name)+"</span><span>"+k+" / "+t+" / "+tot+"</span></div>";
-  });
-  if (state.status==="playing") h += "<button class='btn btn-ghost' onclick='showScores=false;render()'>Oyuna don</button>";
-  return h+"</div>";
-};
+function ensureClock(){
+  var g=state&&state.game;
+  var sec=(g&&g.turnSeconds)||(state&&state.turnSeconds)||0;
+  if(!sec){ try{ if(state&&state.status==="playing") sec=parseInt(localStorage.getItem("uno_tsec")||"0",10)||0; }catch(e){} }
+  if(!g||!sec) return;
+  if(!g.turnSeconds) g.turnSeconds=sec;
+  if(!g.turnEndsAt) g.turnEndsAt=Date.now()+sec*1000;
+  var bar=document.querySelector(".hud");
+  if(!bar) return;
+  if(!document.getElementById("turn-clock")){
+    var mid=document.createElement("div"); mid.className="hud-mid";
+    mid.innerHTML="<div class='turn-clock' id='turn-clock'>"+sec+"</div>";
+    var right=bar.querySelector(".hud-right");
+    if(right) bar.insertBefore(mid,right); else bar.appendChild(mid);
+  }
+}
 var _render33 = render;
 render = function(){
   _render33();
-  var g=state&&state.game;
-  var sec=g&&(g.turnSeconds||state.turnSeconds||0);
-  if(g&&sec&&!document.getElementById("turn-clock")){
-    var bar=document.querySelector(".hud");
-    if(bar&&!bar.querySelector(".hud-mid")){
-      var left=g.turnEndsAt?Math.max(0,Math.ceil((g.turnEndsAt-Date.now())/1000)):sec;
-      var mid=document.createElement("div"); mid.className="hud-mid";
-      mid.innerHTML="<div class='turn-clock' id='turn-clock'>"+left+"</div>";
-      var right=bar.querySelector(".hud-right");
-      if(right) bar.insertBefore(mid,right); else bar.appendChild(mid);
-    }
-  }
+  ensureClock();
 };
 var ac=null;
 function getAC(){ try{ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume(); }catch(e){} return ac; }
@@ -99,12 +96,17 @@ socket.on("cardDraw", function(){ beep(230,0.11,"sine",0.08); });
 var tickN=0;
 setInterval(function(){
   if(!state||!state.game) return;
-  var g=state.game, sec=g.turnSeconds||state.turnSeconds||0;
+  var g=state.game;
+  var sec=g.turnSeconds||state.turnSeconds||0;
+  if(!sec){ try{ sec=parseInt(localStorage.getItem("uno_tsec")||"0",10)||0; }catch(e){} }
   if(!sec) return;
-  var left=g.turnEndsAt?Math.max(0,Math.ceil((g.turnEndsAt-Date.now())/1000)):sec;
+  if(!g.turnEndsAt) g.turnEndsAt=Date.now()+sec*1000;
+  ensureClock();
+  var left=Math.max(0,Math.ceil((g.turnEndsAt-Date.now())/1000));
   var el=document.getElementById("turn-clock");
   if(el){ el.textContent=String(left); el.className="turn-clock"+(left<=3?" warn":""); }
   if(left>0&&left<=3&&tickN!==left){ tickN=left; beep(880,0.05,"square",0.07); setTimeout(function(){ beep(620,0.05,"square",0.06); },70); }
-  if(left<=0 && g.currentId===me.playerId && !g.winnerId){ if(tickN!==-1){ tickN=-1; socket.emit("turnTimeout"); } }
+  if(left<=0 && g.currentId===me.playerId && !g.winnerId){
+    if(tickN!==-1){ tickN=-1; socket.emit("turnTimeout"); g.turnEndsAt=Date.now()+sec*1000; }
+  }
 },250);
-try { if (screen==="home") render(); } catch(e) {}

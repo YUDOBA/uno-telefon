@@ -1,3 +1,4 @@
+VERSION = "V33";
 const _publicRoom33 = publicRoom;
 publicRoom = function (room, viewerId) {
   const o = _publicRoom33(room, viewerId);
@@ -31,17 +32,20 @@ emitRoom = function (room) {
 };
 io.on("connection", function (socket) {
   socket.on("create", function (d) {
-    const room = rooms.get(socket.data.roomCode);
-    if (!room) return;
-    var sec = parseInt(d && d.turnSeconds, 10) || 0;
-    if (sec && sec < 5) sec = 5;
-    if (sec > 180) sec = 180;
-    room.turnSeconds = sec;
-    room.timeScores = {};
+    setTimeout(function () {
+      const room = rooms.get(socket.data.roomCode);
+      if (!room) return;
+      var sec = parseInt(d && d.turnSeconds, 10) || 0;
+      if (sec && sec < 5) sec = 5;
+      if (sec > 180) sec = 180;
+      room.turnSeconds = sec;
+      if (!room.timeScores) room.timeScores = {};
+    }, 0);
   });
   socket.on("setTurnSeconds", function (d) {
     const room = rooms.get(socket.data.roomCode);
-    if (!room || room.hostId !== socket.data.playerId || room.status !== "lobby") return;
+    if (!room || room.hostId !== socket.data.playerId) return;
+    if (room.status !== "lobby") return;
     var sec = parseInt(d && d.turnSeconds, 10) || 0;
     if (sec && sec < 5) sec = 5;
     if (sec > 180) sec = 180;
@@ -49,12 +53,21 @@ io.on("connection", function (socket) {
     emitRoom(room);
   });
   socket.on("start", function () {
-    const room = rooms.get(socket.data.roomCode);
-    if (!room) return;
-    room.timeScores = {};
-    (room.players || []).forEach(function (p) { room.timeScores[p.id] = 0; });
-    room._clockActor = null;
-    if (room.turnSeconds) room.turnEndsAt = Date.now() + room.turnSeconds * 1000;
+    setTimeout(function () {
+      const room = rooms.get(socket.data.roomCode);
+      if (!room) return;
+      if (!room.timeScores) room.timeScores = {};
+      (room.players || []).forEach(function (p) {
+        if (room.timeScores[p.id] == null) room.timeScores[p.id] = 0;
+      });
+      room._clockActor = null;
+      if (room.turnSeconds && room.game) {
+        room.turnEndsAt = Date.now() + room.turnSeconds * 1000;
+        room.game.turnSeconds = room.turnSeconds;
+        room.game.turnEndsAt = room.turnEndsAt;
+        emitRoom(room);
+      }
+    }, 50);
   });
   socket.on("turnTimeout", function () {
     const room = rooms.get(socket.data.roomCode);
@@ -67,7 +80,8 @@ io.on("connection", function (socket) {
     room.timeScores[actor] = (room.timeScores[actor] || 0) + 1;
     room.turnEndsAt = Date.now() + room.turnSeconds * 1000;
     room._clockActor = actor;
-    if (!g.notice) g.notice = "";
+    g.turnEndsAt = room.turnEndsAt;
+    g.turnSeconds = room.turnSeconds;
     g.notice = "Sure bitti. +1 sure puani.";
     emitRoom(room);
   });
