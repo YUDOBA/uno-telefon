@@ -2,8 +2,9 @@ io.on("connection", function (socket) {
   socket.on("turnTimeout", function (d) {
     const room = rooms.get(socket.data.roomCode);
     if (!room || !room.game) return;
-    if (room._toAt && Date.now() - room._toAt < 1500) return;
-    var sec = room.turnSeconds || (d && d.sec) || 0;
+    if (room._toAt && Date.now() - room._toAt < 2000) return;
+    if (room.turnSeconds) return;
+    var sec = (d && d.sec) || 0;
     if (!sec) return;
     room.turnSeconds = sec;
     const g = room.game;
@@ -14,9 +15,6 @@ io.on("connection", function (socket) {
     if (!room.timeScores) room.timeScores = {};
     room.timeScores[actor] = (room.timeScores[actor] || 0) + 1;
     room.turnEndsAt = Date.now() + sec * 1000;
-    room._clockActor = actor;
-    g.turnEndsAt = room.turnEndsAt;
-    g.turnSeconds = sec;
     g.notice = "Sure doldu: +1 sure puani";
     emitRoom(room);
   });
