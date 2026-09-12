@@ -1,10 +1,5 @@
 VERSION = "V33";
 function ver(){ return "<p class='sub' style='text-align:center;margin-top:18px'>Uno Telefon V33</p>"; }
-(function(){
-  var s=document.createElement("style");
-  s.textContent=".turn-clock{display:inline-block;min-width:48px;padding:4px 10px;margin-left:8px;border-radius:10px;background:#1a1408;border:2px solid #ffd000;color:#ffd000;font-weight:800;font-size:18px;vertical-align:middle}.turn-clock.warn{border-color:#ff4d4d;color:#ffb0b0;background:#4a1008}.score-head span{font-size:12px;opacity:.85}";
-  document.head.appendChild(s);
-})();
 function savedSec(){
   var n=0;
   try { n=parseInt(localStorage.getItem("uno_tsec")||"0",10)||0; } catch(e){}
@@ -64,12 +59,12 @@ scoreTable = function(){
     return ta-tb;
   });
   var h="<div class='panel'><h2>Skor</h2><p>Tur "+(state.roundNow||1)+" / "+(state.roundsTotal||1)+"</p>";
-  h+="<div class='row score-head'><span>Oyuncu</span><span>Kart + Sure = Toplam</span></div>";
+  h+="<div class='row'><span><b>Oyuncu</b></span><span><b>Kart</b></span></div>";
   rows.forEach(function(p){
     var k=p.score||0;
     var t=p.timeScore||((state.timeScores&&state.timeScores[p.id])||0);
     var tot=(p.totalScore!=null?p.totalScore:k+t);
-    h+="<div class='row'><span>"+esc(p.name)+"</span><span>"+k+" + "+t+" = "+tot+"</span></div>";
+    h+="<div class='row'><span>"+esc(p.name)+"</span><span>kart "+k+" | sure "+t+" | toplam "+tot+"</span></div>";
   });
   if (state.status==="playing") h+="<button class='btn btn-ghost' onclick='showScores=false;render()'>Oyuna don</button>";
   return h+"</div>";
@@ -77,26 +72,22 @@ scoreTable = function(){
 function clockLeft(){
   var g=state&&state.game;
   var sec=savedSec();
-  if(!g||!sec) return 0;
-  if(!g.turnEndsAt) g.turnEndsAt=Date.now()+sec*1000;
+  if(!sec) return -1;
+  if(g && !g.turnEndsAt) g.turnEndsAt=Date.now()+sec*1000;
+  if(!g) return sec;
   return Math.max(0, Math.ceil((g.turnEndsAt-Date.now())/1000));
 }
 function paintClock(){
-  if(!state||!state.game||state.status!=="playing") return;
-  var sec=savedSec();
-  if(!sec) return;
-  var left=clockLeft();
   var el=document.getElementById("turn-clock");
-  if(!el){
-    var row=document.querySelector("#game-root .row") || document.querySelector(".row");
-    if(!row) return;
-    el=document.createElement("span");
-    el.id="turn-clock";
-    el.className="turn-clock";
-    row.appendChild(el);
-  }
+  if(!el) return;
+  var sec=savedSec();
+  var playing=state && state.status==="playing" && state.game;
+  if(!playing || !sec){ el.style.display="none"; return; }
+  var left=clockLeft();
+  el.style.display="block";
   el.textContent=String(left);
-  el.className="turn-clock"+(left<=3?" warn":"");
+  el.style.borderColor = left<=3 ? "#ff4d4d" : "#ffd000";
+  el.style.color = left<=3 ? "#ffb0b0" : "#ffd000";
 }
 var _render33=render;
 render=function(){
@@ -125,17 +116,17 @@ socket.on("cardFly", function(d){
 socket.on("cardDraw", function(){ beep(230,0.11,"sine",0.08); });
 var tickN=0;
 setInterval(function(){
+  paintClock();
   if(!state||!state.game||state.status!=="playing") return;
   var sec=savedSec();
   if(!sec) return;
-  paintClock();
   var left=clockLeft();
   if(left>0&&left<=3&&tickN!==left){ tickN=left; beep(880,0.05,"square",0.07); setTimeout(function(){ beep(620,0.05,"square",0.06); },70); }
-  if(left<=0 && state.game.currentId===me.playerId && !state.game.winnerId){
+  if(left===0 && state.game.currentId===me.playerId && !state.game.winnerId){
     if(tickN!==-1){
       tickN=-1;
       socket.emit("turnTimeout");
       state.game.turnEndsAt=Date.now()+sec*1000;
     }
   }
-},250);
+},200);
