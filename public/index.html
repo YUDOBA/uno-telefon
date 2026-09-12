@@ -9,17 +9,17 @@
   <meta name="theme-color" content="#070b14" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Uno Telefon</title>
-  <link rel="stylesheet" href="/style.css?v=31" />
+  <link rel="stylesheet" href="/style.css?v=32" />
 </head>
 <body>
   <div id="app">
     <div class="logo">UNO</div>
-    <p class="sub" style="text-align:center">Uno Telefon V31</p>
+    <p class="sub" style="text-align:center">Uno Telefon V32</p>
   </div>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/client.js?v=31"></script>
+  <script src="/client.js?v=32"></script>
   <script>
-    function ver(){ return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V31</p>"; }
+    function ver(){ return "<p class=\"sub\" style=\"text-align:center;margin-top:18px\">Uno Telefon V32</p>"; }
     try { render(); } catch (e) {}
     function keepAlive() {
       try {
@@ -27,10 +27,11 @@
         if (typeof socket === "undefined") return;
         if (!socket.connected) {
           socket.connect();
+          var live = localStorage.getItem("uno_ingame") === "1";
           var code = localStorage.getItem("uno_code") || "";
           var token = localStorage.getItem("uno_token") || "";
           var name = localStorage.getItem("uno_name") || "";
-          if (code && token) socket.emit("join", { name: name, code: code, token: token });
+          if (live && code && token) socket.emit("join", { name: name, code: code, token: token });
         } else {
           socket.emit("ping");
         }
