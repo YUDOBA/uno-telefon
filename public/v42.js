@@ -1,4 +1,5 @@
 function ver(){ return "<p class='sub' style='text-align:center;margin-top:18px'>Uno Telefon V42</p>"; }
+lastTo = 1e15;
 var _lobby42 = lobby;
 lobby = function () {
   _lobby42();
@@ -14,23 +15,9 @@ lobby = function () {
   var btns = app.querySelectorAll("button");
   for (var i = 0; i < btns.length; i++) {
     var t = (btns[i].textContent || "").trim();
-    if (t === "Oyuna devam" && /sure|Suresiz|Sureli/i.test((btns[i].getAttribute("onclick") || "") + (btns[i].parentNode && btns[i].parentNode.textContent || ""))) {
-      /* leave */
-    }
     if (t === "Oyunu baslat" && held && state.hostId === me.playerId) {
       btns[i].textContent = "Oyuna devam";
       btns[i].setAttribute("onclick", "socket.emit('resumeGame')");
-    }
-    if (t === "Oyuna devam" && !held) {
-      btns[i].textContent = "Oyunu baslat";
-      btns[i].setAttribute("onclick", "doStart()");
-    }
-    if (t === "Sureli" && /devam/i.test(t)) {}
-  }
-  if (box) {
-    var wrong = box.querySelectorAll("button");
-    for (var j = 0; j < wrong.length; j++) {
-      if (/devam|baslat/i.test(wrong[j].textContent || "")) wrong[j].remove();
     }
   }
 };
@@ -40,7 +27,8 @@ applySure = function (sec) {
   if (sec && sec < 5) sec = 5;
   if (sec > 180) sec = 180;
   try { localStorage.setItem("uno_tsec", String(sec)); } catch (e) {}
-  if (state && state.status === "lobby") socket.emit("setTurnSeconds", { turnSeconds: sec });
+  if (state && state.status === "lobby" && !heldGame()) socket.emit("setTurnSeconds", { turnSeconds: sec });
   lobby();
 };
+function heldGame(){ return !!(state && (state.game || state.holdGame)); }
 try { if (screen === "lobby") lobby(); } catch (e) {}
