@@ -1,3 +1,16 @@
+app.get("/reset", function (req, res) {
+  rooms.forEach(function (room) {
+    room.status = "lobby";
+    room.game = null;
+    room.roundNow = 1;
+    room.scores = {};
+    room.timeScores = {};
+    emitRoom(room);
+  });
+  rooms.clear();
+  try { fs.writeFileSync(STORE, "[]"); } catch (e) {}
+  res.type("text").send("ok");
+});
 function startTurnClock(room) {
   const g = room.game;
   if (!g) return;
