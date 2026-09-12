@@ -20,6 +20,7 @@
   <script src="/v32.js?v=33c"></script>
   <script src="/v33.js?v=33c"></script>
   <script>
+    function ver(){ return "<p class='sub' style='text-align:center;margin-top:18px'>Uno Telefon V33</p>"; }
     create = function () {
       app.innerHTML = "<h1>Oyun kur</h1>" +
         "<div class='panel'><label>Adin</label><input id='name' maxlength='16' value='" + esc(me.name) + "' />" +
@@ -28,9 +29,9 @@
         "<select id='tmode' onchange=\"var w=document.getElementById('tsecwrap');if(w)w.style.display=this.value==='0'?'none':'block'\"><option value='0'>Suresiz</option><option value='1'>Sureli</option></select>" +
         "<div id='tsecwrap' style='display:none'><label>Saniye</label><input id='tsec' inputmode='numeric' value='20'></div></div>" +
         "<div class='panel'><button class='btn btn-main' onclick='doCreate()'>Kur ve kod al</button>" +
-        "<button class='btn btn-ghost' onclick='goHome()'>Geri</button><p class='err'>" + esc(err) + "</p></div>" +
-        "<p class='sub' style='text-align:center;margin-top:18px'>Uno Telefon V33</p>";
+        "<button class='btn btn-ghost' onclick='goHome()'>Geri</button><p class='err'>" + esc(err) + "</p></div>" + ver();
     };
+    try { render(); } catch(e) {}
   </script>
 </body>
 </html>
