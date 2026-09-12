@@ -49,13 +49,15 @@
         "<div class='panel'><button class='btn btn-main' onclick='doCreate()'>Kur ve kod al</button>" +
         "<button class='btn btn-ghost' onclick='goHome()'>Geri</button><p class='err'>"+esc(err)+"</p></div>"+ver();
     };
+  </script>
+  <script src="/c2.js?v=38"></script>
+  <script>
     doCreate = function(){
       var name=((document.getElementById('name')||{}).value||'').trim()||'Kurucu';
       me.name=name;
       socket.emit('create',{name:name,maxPlayers:(document.getElementById('max')||{}).value||4,turnSeconds:readTurnSec()});
     };
+    try { home(); } catch(e) {}
   </script>
-  <script src="/c2.js?v=38"></script>
-  <script src="/c1p.js?v=38"></script>
 </body>
 </html>
