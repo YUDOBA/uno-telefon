@@ -1,13 +1,16 @@
 io.on("connection", function (socket) {
-  socket.on("turnTimeout", function () {
+  socket.on("turnTimeout", function (d) {
     const room = rooms.get(socket.data.roomCode);
     if (!room || !room.game) return;
-    var sec = room.turnSeconds || 0;
+    if (room._toAt && Date.now() - room._toAt < 1500) return;
+    var sec = room.turnSeconds || (d && d.sec) || 0;
     if (!sec) return;
+    room.turnSeconds = sec;
     const g = room.game;
     let actor = g.currentId;
     if (g.drawQueue && g.drawQueue.length) actor = g.drawQueue[0].playerId;
     if (actor !== socket.data.playerId) return;
+    room._toAt = Date.now();
     if (!room.timeScores) room.timeScores = {};
     room.timeScores[actor] = (room.timeScores[actor] || 0) + 1;
     room.turnEndsAt = Date.now() + sec * 1000;
