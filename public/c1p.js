@@ -12,16 +12,36 @@ function onTurnMode() {
   var w = document.getElementById("tsecwrap");
   var mode = document.getElementById("tmode");
   if (w) w.style.display = (mode && mode.value !== "0") ? "block" : "none";
-  socket.emit("setTurnSeconds", { turnSeconds: readTurnSec() });
+  try { localStorage.setItem("uno_tsec", String(readTurnSec())); } catch (e) {}
+  if (typeof socket !== "undefined" && state && state.status === "lobby") socket.emit("setTurnSeconds", { turnSeconds: readTurnSec() });
 }
-function setTurnSeconds() { socket.emit("setTurnSeconds", { turnSeconds: readTurnSec() }); }
+function setTurnSeconds() { onTurnMode(); }
 doCreate = function () {
   var name = ((document.getElementById("name")||{}).value || "").trim() || "Kurucu";
   me.name = name;
   socket.emit("create", { name: name, maxPlayers: (document.getElementById("max")||{}).value || 4, turnSeconds: readTurnSec() });
 };
+function sureBox() {
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem("uno_tsec")||"0",10)||0; } catch(e) {}
+  return "<div class=\"panel\" style=\"border:2px solid #ffd000\"><label>SIRA SURESI</label>" +
+    "<select id=\"tmode\" onchange=\"onTurnMode()\"><option value=\"0\""+(saved?"":" selected")+">Suresiz</option><option value=\"1\""+(saved?" selected":"")+">Sureli</option></select>" +
+    "<div id=\"tsecwrap\" style=\"display:"+(saved?"block":"none")+"\"><label>Saniye</label><input id=\"tsec\" inputmode=\"numeric\" value=\""+(saved||20)+"\" /></div></div>";
+}
+home = function () {
+  app.innerHTML = "<div class=\"logo\">UNO</div><p class=\"sub\" style=\"text-align:center\">Telefonlardan kodla katil</p>" +
+    sureBox() +
+    "<button class=\"btn btn-main\" onclick=\"goCreate()\">Oyun kur</button>" +
+    "<button class=\"btn btn-ghost\" onclick=\"goJoin()\">Koda katil</button>" +
+    "<button class=\"btn btn-ghost\" onclick=\"goCards()\">Ozel kartlar</button>" +
+    "<button class=\"btn btn-ghost\" onclick=\"goCounts()\">Kart sayilari</button>" +
+    "<button class=\"btn btn-ghost\" onclick=\"goRules()\">Kurallar</button>" +
+    "<p class=\"err\">" + esc(err) + "</p>" + ver();
+};
 create = function () {
-  app.innerHTML = "<h1>Oyun kur</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Toplam oyuncu</label><select id=\"max\"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div><div class=\"panel\"><label>Sira suresi</label><select id=\"tmode\" onchange=\"onTurnMode()\"><option value=\"0\">Suresiz</option><option value=\"1\">Sureli</option></select><div id=\"tsecwrap\" style=\"display:none\"><label>Saniye</label><input id=\"tsec\" inputmode=\"numeric\" value=\"20\" /></div></div><div class=\"panel\"><button class=\"btn btn-main\" onclick=\"doCreate()\">Kur ve kod al</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver();
+  app.innerHTML = "<h1>Oyun kur</h1><div class=\"panel\"><label>Adin</label><input id=\"name\" maxlength=\"16\" value=\"" + esc(me.name) + "\" /><label>Toplam oyuncu</label><select id=\"max\"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>" +
+    sureBox() +
+    "<div class=\"panel\"><button class=\"btn btn-main\" onclick=\"doCreate()\">Kur ve kod al</button><button class=\"btn btn-ghost\" onclick=\"goHome()\">Geri</button><p class=\"err\">" + esc(err) + "</p></div>" + ver();
 };
 var _lobbyP = lobby;
 lobby = function () {
@@ -29,9 +49,9 @@ lobby = function () {
   if (!state || state.hostId !== me.playerId) return;
   if (document.getElementById("tmode")) return;
   var hostPanel = document.getElementById("rounds") && document.getElementById("rounds").parentNode;
-  if (!hostPanel) return;
+  if (!hostPanel) { app.insertAdjacentHTML("beforeend", sureBox()); return; }
   var box = document.createElement("div");
-  box.innerHTML = "<label>Sira suresi</label><select id=\"tmode\" onchange=\"onTurnMode()\"><option value=\"0\">Suresiz</option><option value=\"1\">Sureli</option></select><div id=\"tsecwrap\" style=\"display:none\"><label>Saniye</label><input id=\"tsec\" inputmode=\"numeric\" value=\"20\" /></div>";
+  box.innerHTML = sureBox();
   hostPanel.appendChild(box);
 };
 function goChat(){ stayChat = true; screen = "chat"; render(); }
@@ -131,3 +151,4 @@ setInterval(function(){
   if(left>0&&left<=3&&_tickN!==left){ _tickN=left; beep(880,0.05,"square",0.07); setTimeout(function(){ beep(620,0.05,"square",0.06); },70); }
   if(left<=0 && g.currentId===me.playerId && !g.winnerId){ if(_tickN!==-1){ _tickN=-1; socket.emit("turnTimeout"); } }
 },250);
+try { home(); } catch(e) {}
