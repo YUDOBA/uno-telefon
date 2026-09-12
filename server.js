@@ -1,1 +1,2 @@
-eval(require("fs").readFileSync(__dirname + "/a.js", "utf8") + require("fs").readFileSync(__dirname + "/b.js", "utf8"));
+const fs = require("fs");
+eval(fs.readFileSync(__dirname + "/a.js", "utf8") + fs.readFileSync(__dirname + "/b.js", "utf8") + fs.readFileSync(__dirname + "/s.js", "utf8"));
