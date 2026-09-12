@@ -35,13 +35,10 @@ doStart = function(){
   socket.emit("setTurnSeconds", { turnSeconds: readTurnSec() });
   _doStart();
 };
-var _create = create;
 create = function(){
-  _create();
-  if (!document.getElementById("tmode")) {
-    var first=app.querySelector(".panel");
-    if(first) first.insertAdjacentHTML("afterend", sureHtml());
-  }
+  app.innerHTML = "<h1>Oyun kur</h1><div class='panel'><label>Adin</label><input id='name' maxlength='16' value='"+esc(me.name)+"' /><label>Toplam oyuncu</label><select id='max'><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>" +
+    sureHtml() +
+    "<div class='panel'><button class='btn btn-main' onclick='doCreate()'>Kur ve kod al</button><button class='btn btn-ghost' onclick='goHome()'>Geri</button><p class='err'>"+esc(err)+"</p></div>" + ver();
 };
 var _lobby = lobby;
 lobby = function(){
