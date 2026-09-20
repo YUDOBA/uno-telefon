@@ -5,59 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="YUDOBA" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0b1220" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icon.svg" />
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
   <title>YUDOBA</title>
-  <link rel="stylesheet" href="/style.css?v=57" />
+  <link rel="stylesheet" href="/style.css?v=58" />
 </head>
 <body>
-  <div id="app"><div class="logo">YUDOBA</div><p class="sub" style="text-align:center">YUDOBA V57</p></div>
+  <div id="app"><div class="logo">YUDOBA</div><p class="sub" style="text-align:center">YUDOBA V58</p></div>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/c1.js?v=57"></script>
-  <script src="/c2.js?v=57"></script>
-  <script src="/v31.js?v=57"></script>
-  <script src="/v32.js?v=57"></script>
-  <script src="/v33.js?v=57"></script>
-  <script src="/v35.js?v=57"></script>
-  <script src="/v36.js?v=57"></script>
-  <script src="/v38.js?v=57"></script>
-  <script src="/v39.js?v=57"></script>
-  <script src="/v40.js?v=57"></script>
-  <script src="/v41.js?v=57"></script>
-  <script src="/v42.js?v=57"></script>
-  <script src="/v43.js?v=57"></script>
-  <script src="/v44.js?v=57"></script>
-  <script src="/v45.js?v=57"></script>
-  <script src="/v46.js?v=57"></script>
-  <script src="/v47.js?v=57"></script>
-  <script src="/v49.js?v=57"></script>
-  <script src="/v50.js?v=57"></script>
-  <script src="/v51.js?v=57"></script>
-  <script src="/v52.js?v=57"></script>
-  <script src="/v53.js?v=57"></script>
-  <script src="/v54.js?v=57"></script>
-  <script src="/v55.js?v=57"></script>
-  <script src="/v56.js?v=57"></script>
-  <script src="/v57.js?v=57"></script>
+  <script src="/c1.js?v=58"></script>
+  <script src="/c2.js?v=58"></script>
+  <script src="/v31.js?v=58"></script>
+  <script src="/v32.js?v=58"></script>
+  <script src="/v33.js?v=58"></script>
+  <script src="/v35.js?v=58"></script>
+  <script src="/v36.js?v=58"></script>
+  <script src="/v38.js?v=58"></script>
+  <script src="/v39.js?v=58"></script>
+  <script src="/v40.js?v=58"></script>
+  <script src="/v41.js?v=58"></script>
+  <script src="/v42.js?v=58"></script>
+  <script src="/v43.js?v=58"></script>
+  <script src="/v44.js?v=58"></script>
+  <script src="/v45.js?v=58"></script>
+  <script src="/v46.js?v=58"></script>
+  <script src="/v47.js?v=58"></script>
+  <script src="/v49.js?v=58"></script>
+  <script src="/v50.js?v=58"></script>
+  <script src="/v51.js?v=58"></script>
+  <script src="/v52.js?v=58"></script>
+  <script src="/v53.js?v=58"></script>
+  <script src="/v54.js?v=58"></script>
+  <script src="/v55.js?v=58"></script>
+  <script src="/v56.js?v=58"></script>
+  <script src="/v57.js?v=58"></script>
+  <script src="/v58.js?v=58"></script>
   <script>
-    function ver(){ return "<p class='sub' style='text-align:center;margin-top:18px'>YUDOBA V57</p>"; }
-    create = function () {
-      var sec=0; try{ sec=parseInt(localStorage.getItem("uno_tsec")||"0",10)||0; }catch(e){}
-      app.innerHTML = "<h1>Oyun kur</h1>" +
-        "<div class='panel'><label>Adin</label><input id='name' maxlength='16' value='" + esc(me.name) + "' />" +
-        "<label>Toplam oyuncu</label><select id='max'><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>" +
-        "<div class='panel' style='border:2px solid #ffd000'><label>SIRA SURESI</label>" +
-        "<p style='text-align:center;font-weight:800'>" + (sec?("Sureli "+sec+" sn"):"Suresiz") + "</p>" +
-        "<div style='display:flex;gap:8px'><button class='btn "+(sec?"btn-ghost":"btn-main")+"' type='button' onclick=\"localStorage.setItem('uno_tsec','0');create()\">Suresiz</button>" +
-        "<button class='btn "+(sec?"btn-main":"btn-ghost")+"' type='button' onclick=\"localStorage.setItem('uno_tsec', document.getElementById('tsec').value||20);create()\">Sureli</button></div>" +
-        "<div id='tsecwrap' style='display:"+(sec?"block":"none")+"'><label>Saniye</label><input id='tsec' inputmode='numeric' value='"+(sec||20)+"'></div></div>" +
-        "<div class='panel'><button class='btn btn-main' onclick='doCreate()'>Kur ve kod al</button>" +
-        "<button class='btn btn-ghost' onclick='goHome()'>Geri</button><p class='err'>" + esc(err) + "</p></div>" + ver();
-    };
+    function ver(){ return "<p class='sub' style='text-align:center;margin-top:18px'>YUDOBA V58</p>"; }
     try { render(); } catch(e) {}
   </script>
 </body>
