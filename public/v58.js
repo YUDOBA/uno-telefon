@@ -9,7 +9,8 @@ doStart = function () {
 var _lobby58 = lobby;
 lobby = function () {
   _lobby58();
-  if (!state || !isHost()) return;
+  if (!state || !me) return;
+  if (state.hostId !== me.playerId) return;
   var startBtn = null;
   var buttons = document.querySelectorAll("button");
   for (var i = 0; i < buttons.length; i++) {
