@@ -8,3 +8,4 @@ try { eval(fs.readFileSync(__dirname + "/s68_play.js", "utf8")); } catch (e) {}
 try { eval(fs.readFileSync(__dirname + "/s68_pass.js", "utf8")); } catch (e) {}
 try { eval(fs.readFileSync(__dirname + "/s68_pen.js", "utf8")); } catch (e) {}
 try { eval(fs.readFileSync(__dirname + "/s68_yd.js", "utf8")); } catch (e) {}
+try { eval(fs.readFileSync(__dirname + "/s68_yd_b.js", "utf8")); } catch (e) {}
