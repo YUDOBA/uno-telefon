@@ -1,1 +1,1 @@
-app.get("/sfx-yd.mp3", function(req,res){ sendMp3(res, "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA"); });
+var YD_A = "PLACEHOLDER_TOO_LONG_USE_FILE";
