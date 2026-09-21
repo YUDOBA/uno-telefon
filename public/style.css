@@ -112,3 +112,4 @@ input,select { width:100%; padding:14px; border-radius:12px; border:1px solid #2
 .color-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:10px 0 14px; }
 .color-tile { width:66px; height:75px; border:0; border-radius:10px; color:#fff; font-weight:800; font-size:.68rem; line-height:1.15; padding:6px; }
 .fresh-dot { position:absolute; left:5px; bottom:5px; width:11px; height:11px; border-radius:50%; background:#fff; box-shadow:0 0 0 1px rgba(0,0,0,.35); z-index:3; }
+.ver-tag { position:fixed; right:28px; bottom:calc(10px + env(safe-area-inset-bottom,0px)); margin:0; padding:0 6px; z-index:80; font-size:12px; font-weight:800; color:#9aa8bf; opacity:.9; pointer-events:none; white-space:nowrap; }
