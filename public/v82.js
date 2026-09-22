@@ -1,21 +1,17 @@
-function ver(){ return "<p class='ver-tag'>V82</p>"; }
+function ver(){ return "<p class='ver-tag'>V83</p>"; }
 (function(){
   var boot=document.getElementById("boot");
   var started=false;
-  function finishBoot(){
-    if(boot){
-      boot.classList.add("can-off");
-      boot.classList.add("off");
-    }
+  function hideWait(){
+    if(!boot) return;
+    boot.classList.add("can-off");
+    boot.classList.add("off");
   }
   function playThenOpen(){
     if(started) return;
     started=true;
-    if(typeof showYudobaSplash==="function"){
-      showYudobaSplash(finishBoot);
-    } else {
-      finishBoot();
-    }
+    hideWait();
+    if(typeof showYudobaSplash==="function") showYudobaSplash();
   }
   window.__bootMarkReady=function(){
     var t0=window.__bootT0||Date.now();
@@ -35,7 +31,7 @@ function ver(){ return "<p class='ver-tag'>V82</p>"; }
       var t=(nodes[i].textContent||"").trim();
       if(/^V\d+$/.test(t)||/^YUDOBA\s*V\d+$/i.test(t)||/^Uno Telefon V\d+$/i.test(t)){
         nodes[i].className="ver-tag";
-        nodes[i].textContent="V82";
+        nodes[i].textContent="V83";
       }
     }
   };
