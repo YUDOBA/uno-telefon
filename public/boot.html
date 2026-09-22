@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>YUDOBA</title>
+  <style>
+    html,body{margin:0;height:100%;overflow:hidden;background:#0d1a12;}
+    #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;}
+    .boot-inner{text-align:center;width:100%;max-width:280px;}
+    .boot-logo{width:148px;height:148px;object-fit:contain;display:block;margin:0 auto 18px;}
+    .boot-t{margin:0;color:#f4e27a;font:700 20px/1.2 system-ui,sans-serif;}
+    .boot-bar{height:4px;background:#1f3a28;border-radius:4px;overflow:hidden;margin:18px 28px 0;}
+    .boot-bar i{display:block;height:100%;width:40%;background:#f4e27a;border-radius:4px;animation:bootslide 1.2s ease-in-out infinite;}
+    .boot-s{margin:14px 0 0;color:#c9d6c4;font:15px/1.3 system-ui,sans-serif;min-height:20px;}
+    @keyframes bootslide{0%{transform:translateX(-120%)}100%{transform:translateX(280%)}}
+  </style>
+</head>
+<body>
+  <div id="boot">
+    <div class="boot-inner">
+      <img class="boot-logo" src="/icon.svg" alt="YUDOBA" />
+      <p class="boot-t">YUDOBA yükleniyor</p>
+      <div class="boot-bar"><i></i></div>
+      <p class="boot-s" id="bootSub"></p>
+    </div>
+  </div>
+  <script>
+    var t0 = Date.now();
+    var sub = document.getElementById("bootSub");
+    function goLive() {
+      try { sessionStorage.setItem("yd_from_boot", "1"); } catch (e) {}
+      location.replace("/?live=1&t=" + Date.now());
+    }
+    function ping() {
+      var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      var timer = setTimeout(function () { try { ctrl.abort(); } catch (e) {} }, 4000);
+      fetch("/health", { cache: "no-store", signal: ctrl && ctrl.signal })
+        .then(function (r) {
+          clearTimeout(timer);
+          if (!r.ok) throw new Error("x");
+          var left = 5000 - (Date.now() - t0);
+          setTimeout(goLive, left > 0 ? left : 0);
+        })
+        .catch(function () {
+          clearTimeout(timer);
+          if (Date.now() - t0 > 8000 && sub) sub.textContent = "Baglanti kuruluyor…";
+          setTimeout(ping, 1500);
+        });
+    }
+    ping();
+  </script>
+</body>
+</html>
