@@ -8,11 +8,11 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icon.svg" />
   <title>YUDOBA</title>
-  <link rel="stylesheet" href="/style.css?v=80" />
+  <link rel="stylesheet" href="/style.css?v=81" />
   <style>
     html,body{margin:0;height:100%;overflow:hidden;background:#0d1a12;}
-    #boot{position:fixed;inset:0;z-index:9999;background:#0d1a12;display:flex;align-items:center;justify-content:center;padding:24px;}
-    #boot.off{display:none;}
+    #boot{position:fixed;inset:0;z-index:9999;background:#0d1a12;display:flex !important;align-items:center;justify-content:center;padding:24px;}
+    #boot.can-off.off{display:none !important;}
     .boot-inner{text-align:center;width:100%;max-width:280px;}
     .boot-logo{width:148px;height:148px;object-fit:contain;display:block;margin:0 auto 18px;}
     .boot-t{margin:0;color:#f4e27a;font:700 20px/1.2 system-ui,sans-serif;}
@@ -34,55 +34,102 @@
     </div>
   </div>
   <div id="app"></div>
+  <script>
+    (function () {
+      var boot = document.getElementById("boot");
+      var sub = document.getElementById("bootSub");
+      var retry = document.getElementById("bootRetry");
+      var t0 = Date.now();
+      var socketOk = false;
+      var minDone = false;
+      function tryHide() {
+        if (!minDone || !socketOk || !boot) return;
+        boot.classList.add("off");
+      }
+      setTimeout(function () {
+        minDone = true;
+        if (boot) boot.classList.add("can-off");
+        tryHide();
+      }, 5000);
+      setTimeout(function () {
+        if (boot && boot.classList.contains("off")) return;
+        if (sub) sub.textContent = "Baglanti kuruluyor…";
+      }, 9000);
+      setTimeout(function () {
+        if (boot && boot.classList.contains("off")) return;
+        if (sub) sub.textContent = "Simdi acilamadi.";
+        if (retry) retry.style.display = "block";
+      }, 55000);
+      if (retry) retry.onclick = function () { location.reload(); };
+      window.__bootMarkReady = function () {
+        socketOk = true;
+        tryHide();
+      };
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof socket === "undefined") return;
+        socket.on("connect", window.__bootMarkReady);
+        socket.on("state", window.__bootMarkReady);
+        socket.on("created", window.__bootMarkReady);
+        socket.on("joined", window.__bootMarkReady);
+        if (socket.connected) window.__bootMarkReady();
+      });
+    })();
+  </script>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/c1.js?v=80"></script>
-  <script src="/c2.js?v=80"></script>
-  <script src="/v31.js?v=80"></script>
-  <script src="/v32.js?v=80"></script>
-  <script src="/v33.js?v=80"></script>
-  <script src="/v35.js?v=80"></script>
-  <script src="/v36.js?v=80"></script>
-  <script src="/v38.js?v=80"></script>
-  <script src="/v39.js?v=80"></script>
-  <script src="/v40.js?v=80"></script>
-  <script src="/v41.js?v=80"></script>
-  <script src="/v42.js?v=80"></script>
-  <script src="/v43.js?v=80"></script>
-  <script src="/v44.js?v=80"></script>
-  <script src="/v45.js?v=80"></script>
-  <script src="/v46.js?v=80"></script>
-  <script src="/v47.js?v=80"></script>
-  <script src="/v49.js?v=80"></script>
-  <script src="/v50.js?v=80"></script>
-  <script src="/v51.js?v=80"></script>
-  <script src="/v52.js?v=80"></script>
-  <script src="/v53.js?v=80"></script>
-  <script src="/v54.js?v=80"></script>
-  <script src="/v55.js?v=80"></script>
-  <script src="/v56.js?v=80"></script>
-  <script src="/v57.js?v=80"></script>
-  <script src="/v58.js?v=80"></script>
-  <script src="/v59.js?v=80"></script>
-  <script src="/v60.js?v=80"></script>
-  <script src="/v61.js?v=80"></script>
-  <script src="/v62.js?v=80"></script>
-  <script src="/v63.js?v=80"></script>
-  <script src="/v64.js?v=80"></script>
-  <script src="/v65.js?v=80"></script>
-  <script src="/v66.js?v=80"></script>
-  <script src="/v67.js?v=80"></script>
-  <script src="/v68.js?v=80"></script>
-  <script src="/v69.js?v=80"></script>
-  <script src="/v70.js?v=80"></script>
-  <script src="/v72.js?v=80"></script>
-  <script src="/v73.js?v=80"></script>
-  <script src="/v74.js?v=80"></script>
-  <script src="/v75.js?v=80"></script>
-  <script src="/v76.js?v=80"></script>
-  <script src="/v77.js?v=80"></script>
-  <script src="/v78.js?v=80"></script>
-  <script src="/v79.js?v=80"></script>
-  <script src="/v80.js?v=80"></script>
-  <script>function ver(){ return "<p class='ver-tag'>V80</p>"; } try { render(); } catch(e) {}</script>
+  <script src="/c1.js?v=81"></script>
+  <script src="/c2.js?v=81"></script>
+  <script src="/v31.js?v=81"></script>
+  <script src="/v32.js?v=81"></script>
+  <script src="/v33.js?v=81"></script>
+  <script src="/v35.js?v=81"></script>
+  <script src="/v36.js?v=81"></script>
+  <script src="/v38.js?v=81"></script>
+  <script src="/v39.js?v=81"></script>
+  <script src="/v40.js?v=81"></script>
+  <script src="/v41.js?v=81"></script>
+  <script src="/v42.js?v=81"></script>
+  <script src="/v43.js?v=81"></script>
+  <script src="/v44.js?v=81"></script>
+  <script src="/v45.js?v=81"></script>
+  <script src="/v46.js?v=81"></script>
+  <script src="/v47.js?v=81"></script>
+  <script src="/v49.js?v=81"></script>
+  <script src="/v50.js?v=81"></script>
+  <script src="/v51.js?v=81"></script>
+  <script src="/v52.js?v=81"></script>
+  <script src="/v53.js?v=81"></script>
+  <script src="/v54.js?v=81"></script>
+  <script src="/v55.js?v=81"></script>
+  <script src="/v56.js?v=81"></script>
+  <script src="/v57.js?v=81"></script>
+  <script src="/v58.js?v=81"></script>
+  <script src="/v59.js?v=81"></script>
+  <script src="/v60.js?v=81"></script>
+  <script src="/v61.js?v=81"></script>
+  <script src="/v62.js?v=81"></script>
+  <script src="/v63.js?v=81"></script>
+  <script src="/v64.js?v=81"></script>
+  <script src="/v65.js?v=81"></script>
+  <script src="/v66.js?v=81"></script>
+  <script src="/v67.js?v=81"></script>
+  <script src="/v68.js?v=81"></script>
+  <script src="/v69.js?v=81"></script>
+  <script src="/v70.js?v=81"></script>
+  <script src="/v72.js?v=81"></script>
+  <script src="/v73.js?v=81"></script>
+  <script src="/v74.js?v=81"></script>
+  <script src="/v75.js?v=81"></script>
+  <script src="/v76.js?v=81"></script>
+  <script src="/v77.js?v=81"></script>
+  <script src="/v78.js?v=81"></script>
+  <script src="/v79.js?v=81"></script>
+  <script src="/v80.js?v=81"></script>
+  <script src="/v81.js?v=81"></script>
+  <script>function ver(){ return "<p class='ver-tag'>V81</p>"; } try { render(); } catch(e) {}
+    if (typeof socket !== "undefined") {
+      socket.on("connect", function () { if (window.__bootMarkReady) window.__bootMarkReady(); });
+      if (socket.connected && window.__bootMarkReady) window.__bootMarkReady();
+    }
+  </script>
 </body>
 </html>
