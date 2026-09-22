@@ -4,15 +4,9 @@ function ver(){ return "<p class='ver-tag'>V79</p>"; }
   var sub = document.getElementById("bootSub");
   var retry = document.getElementById("bootRetry");
   var ready = false;
-  var started = Date.now();
   function hideBoot() {
     ready = true;
     if (boot) boot.classList.add("off");
-  }
-  function showBoot(msg) {
-    if (!boot) return;
-    boot.classList.remove("off");
-    if (sub && msg) sub.textContent = msg;
   }
   window.__hideBoot = hideBoot;
   if (retry) retry.onclick = function () { location.reload(); };
@@ -26,14 +20,14 @@ function ver(){ return "<p class='ver-tag'>V79</p>"; }
     if (retry) retry.style.display = "block";
   }, 55000);
   if (typeof socket !== "undefined") {
-    socket.on("connect", function () { hideBoot(); });
-    socket.on("state", function () { hideBoot(); });
-    socket.on("created", function () { hideBoot(); });
-    socket.on("joined", function () { hideBoot(); });
+    socket.on("connect", hideBoot);
+    socket.on("state", hideBoot);
+    socket.on("created", hideBoot);
+    socket.on("joined", hideBoot);
+    if (socket.connected) hideBoot();
   }
   var _r79 = render;
   render = function () {
-    try { hideBoot(); } catch (e) {}
     _r79();
     var nodes = document.querySelectorAll("p.ver-tag, p.sub");
     for (var i = 0; i < nodes.length; i++) {
@@ -44,8 +38,4 @@ function ver(){ return "<p class='ver-tag'>V79</p>"; }
       }
     }
   };
-  if (typeof socket !== "undefined" && socket.connected) hideBoot();
-  else if (Date.now() - started > 0 && typeof socket !== "undefined") {
-    setTimeout(function () { if (socket.connected) hideBoot(); }, 200);
-  }
 })();
