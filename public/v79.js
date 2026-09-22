@@ -1,10 +1,21 @@
-function ver(){ return "<p class='ver-tag'>V79</p>"; }
+function ver(){ return "<p class='ver-tag'>V80</p>"; }
 (function () {
   var boot = document.getElementById("boot");
   var sub = document.getElementById("bootSub");
   var retry = document.getElementById("bootRetry");
   var ready = false;
+  var t0 = Date.now();
+  var hideTimer = null;
   function hideBoot() {
+    if (ready) return;
+    var left = 5000 - (Date.now() - t0);
+    if (left > 40) {
+      if (!hideTimer) hideTimer = setTimeout(hideBootNow, left);
+      return;
+    }
+    hideBootNow();
+  }
+  function hideBootNow() {
     ready = true;
     if (boot) boot.classList.add("off");
   }
@@ -34,7 +45,7 @@ function ver(){ return "<p class='ver-tag'>V79</p>"; }
       var t = (nodes[i].textContent || "").trim();
       if (/^V\d+$/.test(t) || /^YUDOBA\s*V\d+$/i.test(t) || /^Uno Telefon V\d+$/i.test(t)) {
         nodes[i].className = "ver-tag";
-        nodes[i].textContent = "V79";
+        nodes[i].textContent = "V80";
       }
     }
   };
