@@ -1,7 +1,7 @@
 /* YUDOBA istemcisi — tek dosya */
 (function () {
   "use strict";
-  var CLIENT_V = "V86";
+  var CLIENT_V = "V87";
 
   // ---------- Yardımcılar ----------
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -581,16 +581,47 @@
   function P(t, s) { return '<div class="panel"><b>' + t + '</b><p class="sub" style="margin:6px 0 0">' + s + "</p></div>"; }
 
   function how() {
-    return infoPage("Nasıl kullanılır",
-      P("1. Oyun kur", "Adını, masadaki kişi sayısını ve sıra süresini seç. 4 haneli kodu arkadaşlarına söyle. Boş koltuklar oyun başlayınca bot olur; tek başına da oynayabilirsin.") +
-      P("2. Katıl", "Safari ya da Chrome ile aç (WhatsApp içindeki tarayıcı değil). Adını ve kodu yaz. Koptuysan aynı adla katıl, kendi yerine dönersin.") +
-      P("3. Lobi", "Kurucu masa sırasını, tur sayısını, süreyi ve bot zorluğunu ayarlar, sonra Oyunu başlat der.") +
-      P("4. Kart atmak", "Karta bir kez dokun, kart kalkar. İkinci dokunuşta atılır. Sarı çerçeveli kartlar atılabilir.") +
-      P("5. Kart çekmek", "Desteye dokun. Cezasız sırada 1 kart çekersin, sonra at ya da Pas. Ceza gelince ekranda Cezayı çek butonu çıkar.") +
-      P("6. Elini gizle", "Kartlarını aşağı kaydırırsan gizlenir, yukarı kaydırınca açılır.") +
-      P("7. YUDOBA", "2 kartın kalınca YUDOBA butonuna bas. Basmadan tek karta düşersen 2 ceza kartı çekersin.") +
-      P("8. Skor ve mesaj", "Skor ve Mesaj butonları oyundan çıkarmaz, Oyuna dön ile geri dönersin. Yeni mesaj gelince Mesaj butonu yeşil olur.") +
-      P("9. Ana ekrana ekle", "iPhone: Safari'de Paylaş → Ana Ekrana Ekle. Android: Chrome menüsü → Ana ekrana ekle. Güncellemeler kendiliğinden gelir."));
+    var sh = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M5 12v8h14v-8"/></svg>';
+    var h = "";
+    h += RS(1, "Oyun kur",
+      '<div class="flow"><div class="mock"><div class="mf">Adın <span class="mv">Fatih</span></div>' +
+      '<div class="mseg"><i>2</i><i>3</i><i class="on">4</i><i>5</i><i>6</i></div><div class="mf">Süre <span class="mv">30 sn</span></div></div>' +
+      arrow() + '<div class="bigcode">3795</div></div>' +
+      '<p class="sub">Adını, kaç kişilik masa kuracağını ve sıra süresini seç. Çıkan <b>4 haneli kodu</b> arkadaşlarına söyle. Boş koltuklar oyun başlayınca bot olur; tek başına da oynayabilirsin.</p>');
+    h += RS(2, "Kodla katıl",
+      '<div class="flow"><div class="codebox"><i>3</i><i>7</i><i>9</i><i>5</i></div>' + arrow() + '<span class="pill ok">Katıl</span></div>' +
+      '<div class="flow" style="margin-top:8px"><span class="pill ok">✓ Safari / Chrome</span><span class="pill bad">✕ WhatsApp içinde</span></div>' +
+      '<p class="sub">Bağlantıyı Safari ya da Chrome ile aç. Adını ve kodu yaz. <b>Koptuysan aynı adla</b> katıl, kendi yerine ve kartlarına dönersin.</p>');
+    h += RS(3, "Lobi",
+      '<div class="mock wide"><div class="srow"><span>1. Fatih <small>(kurucu)</small></span><span class="arw">▲▼</span></div>' +
+      '<div class="srow"><span>2. Ali</span><span class="arw">▲▼</span></div><div class="srow bot"><span>3. Bot 1</span><span class="arw">boş koltuk</span></div>' +
+      '<div class="flow" style="margin-top:6px"><span class="pill">Tur 3</span><span class="pill">Süresiz</span><span class="pill">Bot: Orta</span></div></div>' +
+      '<p class="sub">Kurucu ▲▼ ile masa sırasını, tur sayısını, süreyi ve bot zorluğunu ayarlar, sonra <b>Oyunu başlat</b> der.</p>');
+    h += RS(4, "Kart atmak",
+      '<div class="steps"><div><span class="frame">' + mini(N("red", 7)) + '</span><span class="cap">Sarı çerçeve: atılabilir</span></div>' + arrow() +
+      '<div><span class="lift">' + mini(N("red", 7)) + '</span><span class="cap">1. dokunuş: kart kalkar</span></div>' + arrow() +
+      '<div><span class="tocenter">' + mini(N("red", 7)) + '</span><span class="cap">2. dokunuş: atılır</span></div></div>' +
+      '<p class="sub">Sarı çerçeveli kartlar o an atılabilir, soluk kartlar atılamaz. Siyah kartlarda renk seçme ekranı açılır.</p>');
+    h += RS(5, "Kart çekmek ve ceza",
+      '<div class="flow"><span class="pilecard">Kart<br>çek</span>' + arrow() + '<span class="pill">1 kart</span>' + arrow() + '<span class="pill ok">At</span><span class="or">ya da</span><span class="pill">Pas</span></div>' +
+      '<div class="flow" style="margin-top:8px"><span class="pilecard pen">Ceza<br>çek<br>+4</span><span class="cap" style="flex:1;min-width:150px">Ceza gelince deste maviye döner ve ekranda <b>Cezayı çek</b> düğmesi çıkar. Tek dokunuşla cezanın tamamı çekilir.</span></div>' +
+      '<p class="sub">Cezasız sırada 1 kart çekersin; sıra kendiliğinden geçmez, ya atarsın ya da Pas dersin.</p>');
+    h += RS(6, "Elini gizle",
+      '<div class="steps loose"><div><span class="fan">' + mini(N("blue", 2)) + mini(N("red", 6)) + mini(K("black", "wild")) + '</span><span class="cap">Açık</span></div>' +
+      '<span class="swipe">↓</span><div><span class="fan hid">' + mini(N("blue", 2)) + mini(N("red", 6)) + mini(K("black", "wild")) + '</span><span class="cap">Gizli</span></div><span class="swipe">↑</span></div>' +
+      '<p class="sub">Kartlarını aşağı kaydırırsan gizlenir, yukarı kaydırınca ya da dokununca açılır. Yanındakiler elini göremez.</p>');
+    h += RS(7, "YUDOBA",
+      '<div class="flow">' + mini(N("green", 3)) + mini(N("yellow", 9)) + '<span class="cap">2 kart kaldı</span>' + arrow() + '<span class="ydb">' + IC.yd + '</span>' + arrow() +
+      '<span class="seatmini"><b>Fatih</b><i>YUDOBA</i></span></div>' +
+      '<p class="sub">2 kartın kalınca butona bas; adının altında YUDOBA yazar, diğer telefonlar titrer. <b>Basmadan tek karta düşersen 2 ceza kartı</b> çekersin.</p>');
+    h += RS(8, "Skor ve mesaj",
+      '<div class="flow"><span class="hb">Skor</span><span class="hb">Mesaj</span>' + arrow() + '<span class="hb new">Mesaj</span><span class="cap">yeni mesaj var</span></div>' +
+      '<p class="sub">Skor ve Mesaj oyundan çıkarmaz; <b>Oyuna dön</b> ile geri gelirsin. Sıra sana gelince üstte "SIRA SENDE" yazar.</p>');
+    h += RS(9, "Ana ekrana ekle",
+      '<div class="add"><div><b>iPhone</b><div class="flow"><span class="pill ic">' + sh + '</span>' + arrow() + '<span class="pill">Ana Ekrana Ekle</span></div><span class="cap">Safari\'de Paylaş düğmesi</span></div>' +
+      '<div><b>Android</b><div class="flow"><span class="pill ic">⋮</span>' + arrow() + '<span class="pill">Ana ekrana ekle</span></div><span class="cap">Chrome menüsü</span></div></div>' +
+      '<p class="sub">Uygulama gibi açılır; güncellemeler kendiliğinden gelir.</p>');
+    return infoPage("Nasıl kullanılır", h);
   }
 
   // Küçük kart görseli ve işaret

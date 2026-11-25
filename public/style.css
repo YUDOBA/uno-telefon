@@ -297,3 +297,40 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .choice { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #0f192b; border-radius: 12px; padding: 8px 10px; margin-top: 8px; }
 .choice .cap { flex: 1; min-width: 140px; }
 .cl { width: 22px; height: 22px; border-radius: 50%; background: var(--panel2); font-weight: 900; font-size: .8rem; display: grid; place-items: center; flex-shrink: 0; }
+
+/* Nasıl kullanılır görselleri */
+.mock { background: #0f192b; border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; min-width: 150px; }
+.mock.wide { width: 100%; }
+.mf { display: flex; justify-content: space-between; gap: 10px; font-size: .75rem; color: var(--muted); font-weight: 700; }
+.mv { color: var(--ink); background: #0b1220; border: 1px solid var(--line); border-radius: 6px; padding: 1px 8px; }
+.mseg { display: flex; gap: 3px; } .mseg i { flex: 1; font-style: normal; text-align: center; font-size: .72rem; font-weight: 800; border: 1px solid var(--line); border-radius: 5px; padding: 2px 0; }
+.mseg i.on { background: var(--accent); color: #1a1608; border-color: var(--accent); }
+.bigcode { font-size: 1.9rem; font-weight: 900; letter-spacing: .2em; color: var(--accent); background: #0f192b; border-radius: 12px; padding: 6px 12px; }
+.codebox { display: flex; gap: 5px; } .codebox i { width: 34px; height: 42px; border-radius: 8px; background: #0b1220; border: 1px solid var(--line); display: grid; place-items: center; font-style: normal; font-weight: 900; font-size: 1.2rem; }
+.pill.bad { background: #4a1d1d; color: #ffd2d2; }
+.pill.ic { width: 34px; height: 30px; padding: 0; display: inline-grid; place-items: center; font-size: 1.1rem; }
+.pill.ic svg { width: 18px; height: 18px; }
+.srow { display: flex; justify-content: space-between; font-size: .82rem; font-weight: 700; padding: 3px 0; border-bottom: 1px solid var(--panel2); }
+.srow small { color: var(--muted); } .srow .arw { color: var(--muted); font-size: .75rem; } .srow.bot { color: var(--muted); }
+.steps { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.steps > div { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; max-width: 84px; }
+.lift .mini { transform: translateY(-8px); } .lift .mini .ucard { box-shadow: 0 0 0 3px #fff, 0 8px 14px rgba(0,0,0,.5); }
+.tocenter { display: inline-block; transform: rotate(-14deg); opacity: .85; }
+.pilecard { width: 46px; height: 62px; border-radius: 8px; border: 2px solid #f3f3f3; background: linear-gradient(160deg, #7a1020, #c4122f); color: #fff; font-weight: 900; font-size: .62rem; line-height: 1.15; display: grid; place-items: center; text-align: center; flex-shrink: 0; }
+.pilecard.pen { background: linear-gradient(160deg, #0f4a6b, #1f87b8); }
+.fan.hid .ucard { background: #d8d4c8 !important; border-color: #b8b3a6 !important; }
+.fan.hid .ucard > * { visibility: hidden; }
+.fan.hid { opacity: .7; transform: translateY(8px); }
+.swipe { font-size: 1.3rem; font-weight: 900; color: var(--accent); }
+.seatmini { display: inline-flex; flex-direction: column; align-items: center; background: #c9a227; color: #1a1400; border-radius: 8px; padding: 4px 8px; font-size: .72rem; }
+.seatmini i { font-style: normal; font-weight: 900; font-size: .6rem; color: #fff; background: #c4122f; border-radius: 5px; padding: 0 5px; margin-top: 2px; }
+.hb { display: inline-block; padding: 6px 12px; border-radius: 9px; background: var(--panel2); font-weight: 800; font-size: .8rem; }
+.hb.new { background: #16a34a; color: #fff; }
+.add { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; }
+.add > div { background: #0f192b; border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 400px) { .add { grid-template-columns: minmax(0,1fr); } }
+.frame .mini .ucard { box-shadow: 0 0 0 4px #ffd000, 0 3px 8px rgba(0,0,0,.35); }
+.steps { flex-wrap: nowrap; gap: 4px; }
+.steps > div { max-width: 70px; flex: 1; }
+.steps .ar { font-size: 1rem; }
+.steps.loose > div { max-width: none; flex: 0 0 auto; } .steps.loose { gap: 10px; }

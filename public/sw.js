@@ -1,7 +1,7 @@
 // YUDOBA service worker
 // Uygulama açılırken önbellekteki bekleme ekranını gösterir; sunucu uyanınca asıl sayfaya geçer.
 // Oyun dosyaları önbelleğe alınmaz, böylece her güncelleme hemen gelir.
-var CACHE = "yd-boot-v86";
+var CACHE = "yd-boot-v87";
 var BOOT = ["/boot.html", "/icon.svg"];
 
 self.addEventListener("install", function (e) {
