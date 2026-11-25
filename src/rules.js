@@ -6,16 +6,26 @@ const COLOR_TR = { red: "Kırmızı", yellow: "Sarı", green: "Yeşil", blue: "M
 
 // Siyah kartlar ve destedeki adetleri
 const BLACK_COUNTS = {
-  wild: 4,      // Joker
-  wild4: 4,     // Joker +4
-  wdraw2: 4,    // Joker +2
-  wtarget2: 4,  // Hedef +2
-  wskip2: 4,    // Çift Atla
-  skipall: 4,   // Herkesi Atla
+  wild: 3,      // Joker
+  wild4: 3,     // Joker +4
+  wdraw2: 2,    // Joker +2
+  wtarget2: 2,  // Hedef +2
+  wskip2: 2,    // Çift Atla
+  skipall: 2,   // Herkesi Atla
   custom: 2,    // Özel Joker 8
-  swap: 2,      // El Değiş
-  shuffle: 2    // El Karıştır
+  swap: 1,      // El Değiş
+  shuffle: 1    // El Karıştır
 };
+
+// Tur sonunda elde kalan kartın puanı (az puan iyidir)
+const NUMBER_POINTS = 5;
+const CARD_POINTS = {
+  skip: 10, reverse: 10, draw2: 10,
+  wild: 20, wild4: 20, wdraw2: 10, wtarget2: 10, wskip2: 10,
+  skipall: 30, custom: 30, swap: 20, shuffle: 20
+};
+// Turu bitiren oyuncunun puanından düşülen miktar
+const WIN_BONUS = 20;
 
 // Renk seçimi gereken kartlar (tüm siyahlar)
 const NEEDS_COLOR = new Set(Object.keys(BLACK_COUNTS));
@@ -73,7 +83,8 @@ function cardLabel(c) {
 }
 
 function cardPoints(c) {
-  return c.type === "number" ? Number(c.value) || 0 : 10;
+  if (c.type === "number") return NUMBER_POINTS;
+  return CARD_POINTS[c.type] != null ? CARD_POINTS[c.type] : 10;
 }
 
 // stackKind: aktif ceza yığını (yoksa null)
@@ -92,6 +103,6 @@ function canPlay(card, top, chosenColor, stackKind) {
 }
 
 module.exports = {
-  COLORS, COLOR_TR, BLACK_COUNTS, NEEDS_COLOR, NEEDS_TARGET,
+  COLORS, COLOR_TR, BLACK_COUNTS, CARD_POINTS, NUMBER_POINTS, WIN_BONUS, NEEDS_COLOR, NEEDS_TARGET,
   shuffle, makeDeck, cardLabel, cardPoints, canPlay
 };

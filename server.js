@@ -6,10 +6,11 @@ const http = require("http");
 const path = require("path");
 const fs = require("fs");
 const { Server } = require("socket.io");
+const R = require("./src/rules");
 const E = require("./src/engine");
 const B = require("./src/bots");
 
-const VERSION = "V85";
+const VERSION = "V86";
 const PORT = process.env.PORT || 3000;
 const STORE = path.join(__dirname, "rooms-v85.json");
 const EMPTY_CLOSE_MS = 45000;
@@ -94,7 +95,7 @@ function publicRoom(room, viewerId) {
     turnSeconds: room.turnSeconds || 0, botLevel: room.botLevel || "mid",
     clockLeftMs: live && room._clockEnds ? Math.max(0, room._clockEnds - Date.now()) : 0,
     paused: !!(live && actorP && !actorP.isBot && !actorP.connected),
-    lastRoundPts: room.lastRoundPts || {}, lastWinnerId: room.lastWinnerId || null,
+    lastRoundPts: room.lastRoundPts || {}, lastWinnerId: room.lastWinnerId || null, winBonus: R.WIN_BONUS,
     gameOver: !!room.gameOver, readyNext: room.readyNext || {}, sawScores: room.sawScores || {},
     chat: room.chat || [],
     players: room.players.map((p) => ({

@@ -1,7 +1,7 @@
 /* YUDOBA istemcisi — tek dosya */
 (function () {
   "use strict";
-  var CLIENT_V = "V85";
+  var CLIENT_V = "V86";
 
   // ---------- Yardımcılar ----------
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -56,21 +56,24 @@
   var WHEEL = function (sm) { return '<div class="wheel' + (sm ? " sm" : "") + '"><i></i><i></i><i></i><i></i></div>'; };
 
   // ---------- Kartlar ----------
+  // Kart bilgileri: adet ve tur sonu puanı (sunucudaki src/rules.js ile aynı tutulmalı)
   var CARD_INFO = {
-    number: { name: "Sayı kartları", text: "Aynı renk ya da aynı sayı üstüne atılır.", count: "Her renkte 0 bir adet, 1–9 ikişer · toplam 76" },
-    skip: { name: "Atla", text: "Sıradaki oyuncu atlanır. Aynı renk ya da başka Atla üstüne atılır.", count: "Her renkten 2 · toplam 8" },
-    reverse: { name: "Ters", text: "Oyun yönü döner. İki kişide Atla gibi çalışır.", count: "Her renkten 2 · toplam 8" },
-    draw2: { name: "+2", text: "Sıradaki 2 kart çeker ya da elindeki herhangi renk +2 ile yığını büyütür. Son atılan +2'nin renginden devam edilir.", count: "Her renkten 2 · toplam 8" },
-    wild: { name: "Joker", text: "Her zaman atılır, atan yeni rengi seçer.", count: "4 adet" },
-    wild4: { name: "Joker +4", text: "Üstte sayı kartı ya da joker varken atılır. Sıradaki 4 kart çeker; sonra sıra onun yanındakine geçer.", count: "4 adet" },
-    custom: { name: "Özel Joker 8", text: "Atan, 8 ceza kartını istediği oyunculara dağıtır. Seçilenler sırayla çeker, sonra oyun normal akışla sürer.", count: "2 adet" },
-    wdraw2: { name: "Joker +2", text: "Her zaman atılır. Renk seçilir, sıradaki 2 kart çeker.", count: "4 adet" },
-    wtarget2: { name: "Hedef +2", text: "Her zaman atılır. Renk ve hedef oyuncu seçilir, hedef 2 kart çeker.", count: "4 adet" },
-    wskip2: { name: "Çift Atla", text: "Her zaman atılır. Renk seçilir, sonraki 2 oyuncu atlanır.", count: "4 adet" },
-    swap: { name: "El Değiş", text: "Her zaman atılır. Renk seçilir, seçtiğin oyuncuyla elleriniz yer değiştirir.", count: "2 adet" },
-    shuffle: { name: "El Karıştır", text: "Her zaman atılır. Renk seçilir, bütün eller toplanıp karıştırılır, herkese eski sayısı kadar dağıtılır.", count: "2 adet" },
-    skipall: { name: "Herkesi Atla", text: "Her zaman atılır. Renk seçilir, diğer herkes atlanır ve atan tekrar oynar.", count: "4 adet" }
+    number: { name: "Sayı kartları", text: "Aynı renk ya da aynı sayı üstüne atılır.", count: "Her renkte 0 bir adet, 1–9 ikişer · toplam 76", pts: 5 },
+    skip: { name: "Atla", text: "Sıradaki oyuncu atlanır. Aynı renk ya da başka Atla üstüne atılır.", count: "Her renkten 2 · toplam 8", pts: 10 },
+    reverse: { name: "Ters", text: "Oyun yönü döner. İki kişide Atla gibi çalışır.", count: "Her renkten 2 · toplam 8", pts: 10 },
+    draw2: { name: "+2", text: "Sıradaki 2 kart çeker ya da elindeki herhangi renk +2 ile yığını büyütür. Cezayı çeken, çektikten sonra oynar.", count: "Her renkten 2 · toplam 8", pts: 10 },
+    wild: { name: "Joker", text: "Her zaman atılır, atan yeni rengi seçer.", count: "3 adet", pts: 20 },
+    wild4: { name: "Joker +4", text: "Üstte sayı kartı ya da joker varken atılır. Sıradaki 4 kart çeker, sonra kendisi oynar.", count: "3 adet", pts: 20 },
+    custom: { name: "Özel Joker 8", text: "Atan, 8 ceza kartını istediği oyunculara dağıtır. Seçilenler sırayla çeker, sonra oyun normal akışla sürer.", count: "2 adet", pts: 30 },
+    wdraw2: { name: "Joker +2", text: "Her zaman atılır. Renk seçilir, sıradaki 2 kart çeker, sonra kendisi oynar.", count: "2 adet", pts: 10 },
+    wtarget2: { name: "Hedef +2", text: "Her zaman atılır. Renk ve hedef oyuncu seçilir, hedef 2 kart çeker.", count: "2 adet", pts: 10 },
+    wskip2: { name: "Çift Atla", text: "Her zaman atılır. Renk seçilir, sonraki 2 oyuncu atlanır.", count: "2 adet", pts: 10 },
+    swap: { name: "El Değiş", text: "Her zaman atılır. Renk seçilir, seçtiğin oyuncuyla elleriniz yer değiştirir.", count: "1 adet", pts: 20 },
+    shuffle: { name: "El Karıştır", text: "Her zaman atılır. Renk seçilir, bütün eller toplanıp karıştırılır, herkese eski sayısı kadar dağıtılır.", count: "1 adet", pts: 20 },
+    skipall: { name: "Herkesi Atla", text: "Her zaman atılır. Renk seçilir, diğer herkes atlanır ve atan tekrar oynar.", count: "2 adet", pts: 30 }
   };
+  var WIN_BONUS = 20;
+
 
   function cardFace(c) {
     var t = c.type, corner = "", mid = "";
@@ -253,6 +256,9 @@
 
   // ---------- Ekranlar ----------
   function verTag() { return '<p class="ver-tag">' + CLIENT_V + "</p>"; }
+  // Yudoba logosu yalnızca ayar ve bilgi ekranlarında görünür
+  var BRAND_SCREENS = { home: 1, create: 1, join: 1, how: 1, rules: 1, cards: 1, lobby: 1 };
+  function brand() { return '<img class="yd-brand" src="/yudoba-logo.svg" alt="yudoba">'; }
   function backBtn() { return '<button class="back-btn" data-act="back" aria-label="Geri">' + IC.back + "</button>"; }
 
   function render() {
@@ -260,7 +266,9 @@
     var focus = document.activeElement && document.activeElement.id;
     var keep = {};
     ["name", "code", "chatIn"].forEach(function (id) { var el = document.getElementById(id); if (el) keep[id] = el.value; });
-    app.innerHTML = fn() + verTag();
+    var branded = !!BRAND_SCREENS[S.screen] && !(S.screen === "game");
+    app.classList.toggle("branded", branded);
+    app.innerHTML = fn() + verTag() + (branded ? brand() : "");
     Object.keys(keep).forEach(function (id) { var el = document.getElementById(id); if (el && keep[id] != null) el.value = keep[id]; });
     if (focus) { var f = document.getElementById(focus); if (f) f.focus(); }
     if (S.screen === "game") { layoutHand(); paintFx(); paintClock(); }
@@ -508,7 +516,7 @@
     var h = '<table class="score-table"><tr><th>Oyuncu</th>' + (showRound ? "<th>Bu tur</th>" : "") + "<th>Kart</th><th>Süre</th><th>Toplam</th></tr>";
     rows.forEach(function (p) {
       var ready = showRound && !st.gameOver && st.readyNext[p.id] ? ' <span class="ok">✓</span>' : "";
-      var rp = st.lastRoundPts[p.id] != null ? st.lastRoundPts[p.id] - (p.id === st.lastWinnerId ? 10 : 0) : 0;
+      var rp = st.lastRoundPts[p.id] != null ? st.lastRoundPts[p.id] - (p.id === st.lastWinnerId ? (st.winBonus || WIN_BONUS) : 0) : 0;
       h += '<tr class="' + (p.id === S.me.id ? "me" : "") + '"><td>' + esc(p.name) + ready + "</td>" + (showRound ? "<td>" + (rp > 0 ? "+" : "") + rp + "</td>" : "") +
         "<td>" + p.score + "</td><td>" + p.timeScore + "</td><td>" + (p.score + p.timeScore) + "</td></tr>";
     });
@@ -585,18 +593,66 @@
       P("9. Ana ekrana ekle", "iPhone: Safari'de Paylaş → Ana Ekrana Ekle. Android: Chrome menüsü → Ana ekrana ekle. Güncellemeler kendiliğinden gelir."));
   }
 
+  // Küçük kart görseli ve işaret
+  function mini(c, mark) {
+    return '<span class="mini' + (mark === "no" ? " no" : "") + '">' + cardHtml(c) + (mark ? '<i class="mk ' + mark + '">' + (mark === "ok" ? "✓" : "✕") + "</i>" : "") + "</span>";
+  }
+  function N(color, v) { return { color: color, type: "number", value: v }; }
+  function K(color, t) { return { color: color, type: t, value: t }; }
+  function RS(num, title, body) {
+    return '<section class="rule"><div class="rh"><span class="rn">' + num + "</span><h2>" + title + "</h2></div>" + body + "</section>";
+  }
+  function arrow() { return '<span class="ar">→</span>'; }
+
   function rules() {
-    return infoPage("Kurallar",
-      P("1. Amaç", "Elini ilk bitiren turu kazanır. Seçilen tur sayısı bitince en düşük toplam puanı olan oyunu kazanır.") +
-      P("2. Kurulum", "2–8 koltuk (insan + bot). Herkese 7 kart dağıtılır. Ortaya yalnızca sayı kartı açılır. İlk yön saat yönüdür.") +
-      P("3. Sıra", "Üstteki kartla aynı renk, aynı sayı ya da aynı türde kart atılır. Atacak kartın olsa bile çekebilirsin. Cezasız sırada en fazla 1 kart çekilir; çekince sıra kendiliğinden geçmez, at ya da Pas.") +
-      P("4. Ceza kartları", "Ceza gelen oyuncu cezayı çeker. Cezalar bitince sıra, cezayı atan oyuncunun yanındakine geçer. +2 yığınında elinde +2 varsa atıp yığını büyütebilirsin.") +
-      P("5. Joker +4", "Üstte sayı kartı ya da joker varken atılır. Atla, Ters ya da +2 üstüne atılmaz.") +
-      P("6. YUDOBA", "2 kartın kalınca, cezan yokken YUDOBA butonuna bas. Basmadan tek karta düşersen 2 ceza kartı çekersin.") +
-      P("7. Deste biterse", "Yere atılan kartlar karıştırılıp yeni çekme destesi olur.") +
-      P("8. Puan", "Tur sonunda elde kalan sayı kartları yüz değeri, diğer kartlar 10 puan. Turu bitirenin toplamından 10 düşülür. Süreli oyunda süre dolunca sıradaki oyuncu +1 süre puanı alır ve sayaç başa döner.") +
-      P("9. Botlar", "Boş koltuklar Bot 1, Bot 2 olur. Kopan oyuncunun yerine bot geçer; aynı adla dönen kendi yerini alır. Oyun sürerken gelen yeni kişi bir botun yerini alır. Odada insan kalmazsa oda yaklaşık 45 saniye sonra kapanır.") +
-      P("10. Özel kartlar", "Ayrıntılar Özel kartlar sayfasında."));
+    var h = "";
+    h += RS(1, "Amaç",
+      '<div class="flow">' + mini(N("red", 4)) + mini(N("blue", 7)) + mini(K("green", "skip")) + arrow() + '<span class="pill ok">Elini ilk bitiren turu kazanır</span></div>' +
+      '<p class="sub">Seçilen tur sayısı bitince <b>en düşük toplam puanı</b> olan oyunu kazanır.</p>');
+    h += RS(2, "Başlangıç",
+      '<div class="flow"><span class="fan">' + mini(N("yellow", 2)) + mini(N("red", 6)) + mini(N("blue", 1)) + mini(K("green", "draw2")) + mini(N("green", 8)) + mini(K("black", "wild")) + mini(N("blue", 5)) + '</span><span class="pill">7 kart</span></div>' +
+      '<p class="sub">2–8 koltuk; boş koltuklar bot olur. Ortaya her zaman bir <b>sayı kartı</b> açılır. İlk yön saat yönüdür.</p>');
+    h += RS(3, "Hangi kart atılır?",
+      '<div class="match"><div class="top">' + mini(N("red", 5)) + '<span class="cap">Üstteki kart</span></div><div class="opts">' +
+      '<div>' + mini(N("red", 8), "ok") + '<span class="cap">Aynı renk</span></div>' +
+      '<div>' + mini(N("blue", 5), "ok") + '<span class="cap">Aynı sayı</span></div>' +
+      '<div>' + mini(K("black", "wild"), "ok") + '<span class="cap">Siyah kart</span></div>' +
+      '<div>' + mini(N("green", 2), "no") + '<span class="cap">Uymuyor</span></div></div></div>' +
+      '<p class="sub">Atla, Ters ve +2 ise aynı renge ya da aynı türdeki karta atılır.</p>');
+    h += RS(4, "Kart çekmek ve Pas",
+      '<div class="flow"><span class="pill">Desteye dokun</span>' + arrow() + '<span class="pill">1 kart çek</span>' + arrow() + '<span class="pill ok">At ya da Pas</span></div>' +
+      '<p class="sub">Atacak kartın olsa bile çekebilirsin. Cezasız sırada en fazla <b>1 kart</b> çekilir; sıra kendiliğinden geçmez.</p>');
+    h += RS(5, "Ceza kartları",
+      '<div class="flow">' + mini(K("blue", "draw2")) + '<span class="cap">gelince sıradaki oyuncu ya:</span></div>' +
+      '<div class="choice"><span class="cl">A</span>' + mini(K("red", "draw2"), "ok") + '<span class="cap">Elindeki herhangi renk +2\'yi atar, yığın büyür, ceza bir sonrakine geçer</span></div>' +
+      '<div class="choice"><span class="cl">B</span><span class="pill pen">Cezayı çeker</span>' + arrow() + '<span class="pill ok">Sonra oynar</span></div>' +
+      '<p class="sub"><b>Cezayı çeken sırasını kaybetmez.</b> Yalnızca +2 üstüne +2 atılabilir; Joker +4, Joker +2, Hedef +2 ve Özel Joker 8 cezası çekilmek zorundadır. Hedef +2 ve Özel Joker 8 cezası bitince sıra, kartı atanın yanındakine geçer.</p>' +
+      '<div class="match"><div class="top">' + mini(K("black", "wild4")) + '<span class="cap">Joker +4 nereye?</span></div><div class="opts">' +
+      '<div>' + mini(N("green", 3), "ok") + '<span class="cap">Sayı</span></div>' +
+      '<div>' + mini(K("black", "wild"), "ok") + '<span class="cap">Joker</span></div>' +
+      '<div>' + mini(K("red", "skip"), "no") + '<span class="cap">Atla</span></div>' +
+      '<div>' + mini(K("blue", "draw2"), "no") + '<span class="cap">+2</span></div></div></div>');
+    h += RS(6, "YUDOBA",
+      '<div class="flow">' + mini(N("red", 3)) + mini(N("blue", 9)) + arrow() + '<span class="ydb">' + IC.yd + '</span><span class="pill ok">Bas</span></div>' +
+      '<p class="sub">2 kartın kaldığında, cezan yokken YUDOBA butonuna bas. Basmadan tek karta düşersen <b>2 ceza kartı</b> çekersin.</p>');
+    var groups = [
+      [5, [N("yellow", 7)], "Sayı kartları"],
+      [10, [K("green", "skip"), K("red", "reverse"), K("blue", "draw2"), K("black", "wdraw2"), K("black", "wtarget2"), K("black", "wskip2")], "Atla, Ters, +2, Joker +2, Hedef +2, Çift Atla"],
+      [20, [K("black", "wild"), K("black", "wild4"), K("black", "swap"), K("black", "shuffle")], "Joker, Joker +4, El Değiş, El Karıştır"],
+      [30, [K("black", "skipall"), K("black", "custom")], "Herkesi Atla, Özel Joker 8"]
+    ];
+    var pt = '<div class="pts">';
+    groups.forEach(function (g) {
+      pt += '<div class="pr"><b class="pv">' + g[0] + '</b><div><div class="pc">' + g[1].map(function (c) { return mini(c); }).join("") + '</div><span class="cap">' + g[2] + "</span></div></div>";
+    });
+    pt += '<div class="pr win"><b class="pv">−' + WIN_BONUS + '</b><div><span class="cap">Turu bitiren oyuncunun puanından düşülür</span></div></div></div>';
+    h += RS(7, "Puanlar", pt + '<p class="sub">Tur bitince elinde kalan her kart için yukarıdaki puan yazılır. <b>Az puan iyidir.</b> Süreli oyunda süre dolunca sıradaki oyuncu +1 süre puanı alır.</p>');
+    h += RS(8, "Diğer",
+      '<ul class="ls"><li><b>Deste biterse:</b> yere atılan kartlar karıştırılıp yeni deste olur.</li>' +
+      '<li><b>Botlar:</b> kopan oyuncunun yerine bot geçer; aynı adla dönen kendi yerini alır. Oyun sürerken gelen yeni kişi bir botun yerini alır.</li>' +
+      '<li><b>Boş oda:</b> odada insan kalmazsa oda yaklaşık 45 saniye sonra kapanır.</li>' +
+      '<li><b>Özel kartlar:</b> her kartın ayrıntısı Özel kartlar sayfasında.</li></ul>');
+    return infoPage("Kurallar", h);
   }
 
   function cards() {
@@ -606,9 +662,9 @@
     order.forEach(function (t) {
       var info = CARD_INFO[t];
       var c = { color: sample[t] || "black", type: t, value: t === "number" ? 7 : t };
-      h += '<div class="panel guide">' + cardHtml(c) + "<div><b>" + info.name + '</b><p class="sub" style="margin:0">' + info.text + '</p><div class="cnt">' + info.count + "</div></div></div>";
+      h += '<div class="panel guide">' + cardHtml(c) + "<div><b>" + info.name + '</b><p class="sub" style="margin:0">' + info.text + '</p><div class="cnt">' + info.count + " · elde kalırsa " + info.pts + " puan</div></div></div>";
     });
-    h += '<div class="panel"><b>Deste toplamı: 130 kart</b><p class="sub" style="margin:6px 0 0">100 renkli kart (sayı, Atla, Ters, +2) ve 30 siyah kart.</p></div>';
+    h += '<div class="panel"><b>Deste toplamı: 118 kart</b><p class="sub" style="margin:6px 0 0">100 renkli kart (sayı, Atla, Ters, +2) ve 18 siyah kart.</p></div>';
     return infoPage("Özel kartlar", h);
   }
 

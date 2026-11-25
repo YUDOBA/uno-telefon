@@ -106,7 +106,7 @@ function endRound(room, winnerId) {
     last[p.id] = pts;
     room.scores[p.id] = (room.scores[p.id] || 0) + pts;
   });
-  if (winnerId) room.scores[winnerId] = (room.scores[winnerId] || 0) - 10;
+  if (winnerId) room.scores[winnerId] = (room.scores[winnerId] || 0) - R.WIN_BONUS;
   room.lastRoundPts = last;
   room.lastWinnerId = winnerId;
   room.readyNext = {};
