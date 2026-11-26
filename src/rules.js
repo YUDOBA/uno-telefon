@@ -1,5 +1,5 @@
 "use strict";
-// YUDOBA kart kuralları: deste, oynanabilirlik, etiket ve puan.
+// Dapai kart kuralları: deste, oynanabilirlik, etiket ve puan.
 
 const COLORS = ["red", "yellow", "green", "blue"];
 const COLOR_TR = { red: "Kırmızı", yellow: "Sarı", green: "Yeşil", blue: "Mavi" };

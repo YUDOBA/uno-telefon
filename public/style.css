@@ -1,4 +1,4 @@
-/* YUDOBA — tek stil dosyası */
+/* Dapai — tek stil dosyası */
 :root {
   --bg: #0b1220; --panel: #152033; --panel2: #24344f; --line: #2c3d5c;
   --ink: #f4f1ea; --muted: #9aa8bf; --accent: #ffd000;
@@ -72,7 +72,7 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .home { justify-content: center; gap: 10px; align-items: center; }
 .home > * { width: 100%; max-width: 420px; }
 .home .hero { display: flex; justify-content: center; }
-.home .hero img { width: min(190px, 46vw, 25vh); height: auto; border-radius: 34px; box-shadow: 0 8px 26px rgba(0,0,0,.4); }
+.home .hero img { width: min(300px, 74vw, 40vh); height: auto; display: block; }
 .home .btn-main { margin-top: 4px; }
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .tile { aspect-ratio: 1 / 1; width: 100%; border: 0; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
@@ -121,7 +121,7 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .wheel i:nth-child(1) { background: var(--red); } .wheel i:nth-child(2) { background: var(--yellow); }
 .wheel i:nth-child(3) { background: var(--green); } .wheel i:nth-child(4) { background: var(--blue); }
 .fresh-dot { position: absolute; left: 6px; bottom: 6px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.4); z-index: 3; }
-.cback { width: 66px; height: 100px; border-radius: 10px; border: 3px solid #f3f3f3; background: linear-gradient(160deg, #7a1020, #c4122f); box-shadow: 0 6px 14px rgba(0,0,0,.4); }
+.cback { width: 66px; height: 100px; border-radius: 10px; border: 3px solid #f3f3f3; background: #161B2E url(/card-back.svg) center / cover no-repeat; box-shadow: 0 6px 14px rgba(0,0,0,.4); }
 
 /* Kart rehberi */
 .guide { display: flex; gap: 14px; align-items: center; }
@@ -147,7 +147,7 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .hbtn.unread { background: #16a34a; color: #fff; }
 .hud-mid { flex: 1; text-align: center; align-self: center; font-size: .78rem; color: var(--muted); }
 .pile { width: 62px; text-align: center; }
-.pile button { width: 62px; height: 86px; border-radius: 10px; border: 3px solid #f3f3f3; background: linear-gradient(160deg, #7a1020, #c4122f); color: #fff;
+.pile button { width: 62px; height: 86px; border-radius: 10px; border: 3px solid #f3f3f3; background: linear-gradient(rgba(22,27,46,.74), rgba(22,27,46,.74)), #161B2E url(/card-back.svg) center / cover no-repeat; color: #fff; text-shadow: 0 1px 3px #000;
   font-weight: 900; font-size: .8rem; line-height: 1.2; box-shadow: 0 6px 12px rgba(0,0,0,.35); padding: 2px; }
 .pile button:disabled { opacity: .4; }
 .pile button.pen { background: linear-gradient(160deg, #0f4a6b, #1f87b8); }
@@ -167,7 +167,7 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .seat.off { opacity: .5; }
 .seat .nm { font-size: .7rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .seat .bk { display: flex; justify-content: center; height: 20px; margin: 3px 0 2px; }
-.seat .bk i { width: 13px; height: 19px; margin-left: -5px; border-radius: 3px; background: linear-gradient(160deg, #7a1020, #c4122f); border: 1px solid #fff; }
+.seat .bk i { width: 13px; height: 19px; margin-left: -5px; border-radius: 3px; background: #161B2E url(/card-back.svg) center / cover no-repeat; border: 1px solid #fff; }
 .seat .bk i:first-child { margin-left: 0; }
 .seat .ct { font-size: .64rem; font-weight: 700; }
 .seat .ydtag { margin-top: 3px; font-size: .6rem; font-weight: 900; color: #fff; background: #c4122f; border-radius: 6px; padding: 1px 5px; display: inline-block; }

@@ -1,5 +1,5 @@
 "use strict";
-// Oyun motoru: tur başlatma, kart atma, çekme, pas, YUDOBA, tur sonu.
+// Oyun motoru: tur başlatma, kart atma, çekme, pas, Dapai, tur sonu.
 // Socket'ten bağımsızdır; yayınlanacak olayları fx.events listesine ekler.
 
 const R = require("./rules");
@@ -169,11 +169,11 @@ function play(room, pid, opts, fx) {
   fx.events.push(["cardFly", { card: { color: card.color, type: card.type, value: card.value }, fromId: pid }]);
   room.moveSeq++;
 
-  // YUDOBA demeden tek kart kaldıysa 2 ceza
+  // Dapai demeden tek kart kaldıysa 2 ceza
   let unoMiss = false;
   if (hand.length === 1 && !g.saidUno[pid]) { drawCards(g, pid, 2, fx); unoMiss = true; }
   if (hand.length === 0) { endRound(room, pid); return null; }
-  const missTxt = unoMiss ? " YUDOBA demediği için 2 ceza çekti." : "";
+  const missTxt = unoMiss ? " Dapai demediği için 2 ceza çekti." : "";
   const nxt = nextSeat(room, pid, 1);
   const map = {};
   const colTxt = card.color === "black" ? " Renk: " + R.COLOR_TR[g.chosenColor] + "." : "";
@@ -330,10 +330,10 @@ function pass(room, pid) {
 
 function sayUno(room, pid, fx) {
   const g = room.game;
-  if (!g || room.status !== "playing") return "YUDOBA denilemez.";
+  if (!g || room.status !== "playing") return "Dapai denilemez.";
   const hand = g.hands[pid] || [];
-  if (hand.length !== 2) return "YUDOBA sadece 2 kart kalınca denir.";
-  if (isPenalty(g) && actorOf(g) === pid) return "Ceza varken YUDOBA denilemez.";
+  if (hand.length !== 2) return "Dapai sadece 2 kart kalınca denir.";
+  if (isPenalty(g) && actorOf(g) === pid) return "Ceza varken Dapai denilemez.";
   if (g.saidUno[pid]) return null;
   g.saidUno[pid] = true;
   fx.events.push(["unoShout", { playerId: pid, name: nameOf(room, pid) }]);

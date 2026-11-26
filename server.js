@@ -1,5 +1,5 @@
 "use strict";
-// YUDOBA sunucusu: Express + Socket.io. Oyun kuralları src/ altındadır.
+// Dapai sunucusu: Express + Socket.io. Oyun kuralları src/ altındadır.
 
 const express = require("express");
 const http = require("http");
@@ -10,7 +10,7 @@ const R = require("./src/rules");
 const E = require("./src/engine");
 const B = require("./src/bots");
 
-const VERSION = "V87";
+const VERSION = "V88";
 const PORT = process.env.PORT || 3000;
 const STORE = path.join(__dirname, "rooms-v85.json");
 const EMPTY_CLOSE_MS = 45000;
@@ -445,6 +445,6 @@ io.on("connection", (socket) => {
 
 loadRooms();
 rooms.forEach((room) => scheduleEmptyClose(room));
-server.listen(PORT, () => console.log("YUDOBA " + VERSION + " port " + PORT));
+server.listen(PORT, () => console.log("Dapai " + VERSION + " port " + PORT));
 
 module.exports = { rooms, emitRoom };

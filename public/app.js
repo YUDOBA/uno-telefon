@@ -1,7 +1,7 @@
-/* YUDOBA istemcisi — tek dosya */
+/* Dapai istemcisi — tek dosya */
 (function () {
   "use strict";
-  var CLIENT_V = "V87";
+  var CLIENT_V = "V88";
 
   // ---------- Yardımcılar ----------
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -51,7 +51,7 @@
     help: '<svg viewBox="0 0 48 48" fill="none" stroke="#111" stroke-width="4.5" stroke-linecap="round"><path d="M16 17c0-6 4-9 8.5-9S33 11 33 16c0 6-8.5 7-8.5 13"/><circle cx="24.5" cy="38" r="1.5" fill="#111"/></svg>',
     cards: '<svg viewBox="0 0 48 48"><rect x="7" y="12" width="18" height="26" rx="3" fill="#fff" transform="rotate(-16 16 25)"/><rect x="15" y="9" width="18" height="27" rx="3" fill="#e6f5e6"/><rect x="23" y="12" width="18" height="26" rx="3" fill="#fff" transform="rotate(14 32 25)"/></svg>',
     book: '<svg viewBox="0 0 48 48"><path d="M6 10h14c3 0 4 2 4 2s1-2 4-2h14v28H28c-2 0-4 2-4 2s-2-2-4-2H6z" fill="#fff"/><path d="M24 12v26" stroke="#1C6DD0" stroke-width="2"/></svg>',
-    yd: '<svg viewBox="0 0 64 64"><rect width="32" height="32" fill="#E31C23"/><rect x="32" width="32" height="32" fill="#F5C400"/><rect y="32" width="32" height="32" fill="#2E9B3E"/><rect x="32" y="32" width="32" height="32" fill="#1C6DD0"/><rect x="9" y="9" width="46" height="46" rx="8" fill="#fff"/><text x="32" y="30" text-anchor="middle" font-family="Arial Black,Helvetica,sans-serif" font-size="11.5" font-weight="900" fill="#111">YUDO</text><text x="32" y="47" text-anchor="middle" font-family="Arial Black,Helvetica,sans-serif" font-size="15" font-weight="900" fill="#111">BA</text></svg>'
+    yd: '<svg viewBox="0 0 64 64"><rect width="32" height="32" fill="#E31C23"/><rect x="32" width="32" height="32" fill="#F5C400"/><rect y="32" width="32" height="32" fill="#2E9B3E"/><rect x="32" y="32" width="32" height="32" fill="#1C6DD0"/><rect x="9" y="9" width="46" height="46" rx="8" fill="#fff"/><path fill="#161B2E" d="M21.143 29.0Q20.156000000000002 29.0 19.6415 28.485500000000002Q19.127000000000002 27.971 19.127000000000002 27.005V16.189999999999998Q19.127000000000002 15.223999999999998 19.6415 14.709499999999998Q20.156000000000002 14.194999999999999 21.143 14.194999999999999H25.259Q29.123 14.194999999999999 31.2335 16.127Q33.344 18.058999999999997 33.344 21.587Q33.344 23.351 32.798 24.7265Q32.252 26.102 31.223000000000003 27.057499999999997Q30.194000000000003 28.012999999999998 28.692500000000003 28.5065Q27.191000000000003 29.0 25.259 29.0ZM22.991 25.871H25.007Q26.12 25.871 26.9285 25.598Q27.737000000000002 25.325 28.2725 24.799999999999997Q28.808 24.275 29.070500000000003 23.476999999999997Q29.333000000000002 22.679 29.333000000000002 21.587Q29.333000000000002 19.403 28.262 18.3635Q27.191000000000003 17.323999999999998 25.007 17.323999999999998H22.991Z M38.972 29.231Q37.775 29.231 36.8615 28.79Q35.948 28.349 35.4335 27.5825Q34.919000000000004 26.816 34.919000000000004 25.829Q34.919000000000004 24.695 35.507000000000005 24.044Q36.095 23.393 37.397 23.1095Q38.699 22.826 40.862 22.826H41.660000000000004V22.532Q41.660000000000004 21.776 41.2715 21.461Q40.883 21.146 39.938 21.146Q39.434000000000005 21.146 38.804 21.261499999999998Q38.174 21.377 37.397 21.671Q36.83 21.881 36.431 21.734Q36.032000000000004 21.587 35.8115 21.229999999999997Q35.591 20.872999999999998 35.6015 20.453Q35.612 20.033 35.8745 19.655Q36.137 19.277 36.683 19.067Q37.691 18.689 38.5415 18.563Q39.392 18.436999999999998 40.106 18.436999999999998Q41.828 18.436999999999998 42.9515 18.9305Q44.075 19.424 44.6315 20.4425Q45.188 21.461 45.188 23.057V27.299Q45.188 28.223 44.747 28.706Q44.306000000000004 29.189 43.466 29.189Q42.605000000000004 29.189 42.164 28.706Q41.765 28.286 41.702 27.53Q41.576 27.908 41.345 28.201999999999998Q40.967 28.685 40.358000000000004 28.958Q39.749 29.231 38.972 29.231ZM41.660000000000004 24.59H40.862Q40.043 24.59 39.5075 24.7055Q38.972 24.820999999999998 38.72 25.0625Q38.468 25.304 38.468 25.682Q38.468 26.165 38.8145 26.48Q39.161 26.795 39.812000000000005 26.795Q40.337 26.795 40.7465 26.564Q41.156 26.333 41.408 25.923499999999997Q41.660000000000004 25.514 41.660000000000004 24.968Z M16.6595 49.969Q15.7775 49.969 15.2945 49.486000000000004Q14.8115 49.003 14.8115 48.079V37.348Q14.8115 36.445 15.283999999999999 35.962Q15.756499999999999 35.479 16.6385 35.479Q17.5415 35.479 18.0245 35.962Q18.4025 36.361 18.4655 37.033Q18.8015 36.424 19.494500000000002 36.004Q20.4185 35.437 21.6155 35.437Q22.9595 35.437 23.978 36.087999999999994Q24.9965 36.739 25.5635 37.936Q26.1305 39.133 26.1305 40.834Q26.1305 42.493 25.5635 43.711Q24.9965 44.929 23.978 45.58Q22.9595 46.231 21.6155 46.231Q20.4605 46.231 19.5365 45.685Q18.9065 45.307 18.549500000000002 44.761V48.079Q18.549500000000002 49.003 18.056 49.486000000000004Q17.5625 49.969 16.6595 49.969ZM20.439500000000002 43.48Q21.006500000000003 43.48 21.437 43.1965Q21.8675 42.913 22.119500000000002 42.335499999999996Q22.3715 41.758 22.3715 40.834Q22.3715 39.427 21.825499999999998 38.807500000000005Q21.2795 38.188 20.439500000000002 38.188Q19.872500000000002 38.188 19.4315 38.461Q18.9905 38.734 18.738500000000002 39.311499999999995Q18.4865 39.888999999999996 18.4865 40.834Q18.4865 42.22 19.0325 42.849999999999994Q19.5785 43.48 20.439500000000002 43.48Z M31.4225 46.231Q30.2255 46.231 29.311999999999998 45.79Q28.3985 45.349 27.884 44.582499999999996Q27.3695 43.816 27.3695 42.829Q27.3695 41.695 27.9575 41.044Q28.5455 40.393 29.8475 40.1095Q31.1495 39.826 33.3125 39.826H34.1105V39.532Q34.1105 38.775999999999996 33.722 38.461Q33.3335 38.146 32.3885 38.146Q31.8845 38.146 31.2545 38.2615Q30.6245 38.377 29.8475 38.671Q29.2805 38.881 28.8815 38.734Q28.482499999999998 38.587 28.262 38.230000000000004Q28.0415 37.873 28.052 37.453Q28.0625 37.033 28.325 36.655Q28.5875 36.277 29.133499999999998 36.067Q30.1415 35.689 30.992 35.563Q31.8425 35.437 32.5565 35.437Q34.2785 35.437 35.402 35.930499999999995Q36.5255 36.424 37.082 37.442499999999995Q37.6385 38.461 37.6385 40.057V44.299Q37.6385 45.223 37.197500000000005 45.706Q36.7565 46.189 35.9165 46.189Q35.0555 46.189 34.6145 45.706Q34.2155 45.286 34.1525 44.53Q34.0265 44.908 33.7955 45.202Q33.417500000000004 45.685 32.8085 45.958Q32.1995 46.231 31.4225 46.231ZM34.1105 41.59H33.3125Q32.4935 41.59 31.958 41.7055Q31.4225 41.821 31.1705 42.0625Q30.9185 42.304 30.9185 42.682Q30.9185 43.165 31.265 43.480000000000004Q31.6115 43.795 32.2625 43.795Q32.7875 43.795 33.197 43.564Q33.6065 43.333 33.8585 42.923500000000004Q34.1105 42.514 34.1105 41.968Z M41.6075 46.189Q40.725500000000004 46.189 40.24250000000001 45.664Q39.7595 45.139 39.7595 44.152V37.516Q39.7595 36.528999999999996 40.24250000000001 36.004Q40.725500000000004 35.479 41.6075 35.479Q42.51050000000001 35.479 43.004000000000005 36.004Q43.4975 36.528999999999996 43.4975 37.516V44.152Q43.4975 45.139 43.0145 45.664Q42.5315 46.189 41.6075 46.189ZM41.6075 33.988Q40.62050000000001 33.988 40.08500000000001 33.525999999999996Q39.5495 33.064 39.5495 32.182Q39.5495 31.320999999999998 40.08500000000001 30.858999999999998Q40.62050000000001 30.397 41.6075 30.397Q42.636500000000005 30.397 43.161500000000004 30.858999999999998Q43.6865 31.320999999999998 43.6865 32.182Q43.6865 33.064 43.161500000000004 33.525999999999996Q42.636500000000005 33.988 41.6075 33.988Z M47.42450000000001 41.149Q46.87850000000001 41.149 46.55300000000001 40.792Q46.227500000000006 40.435 46.14350000000001 39.805L45.40850000000001 33.463Q45.261500000000005 32.370999999999995 45.807500000000005 31.688499999999998Q46.35350000000001 31.006 47.42450000000001 31.006Q48.51650000000001 31.006 49.041500000000006 31.688499999999998Q49.566500000000005 32.370999999999995 49.419500000000006 33.463L48.70550000000001 39.805Q48.621500000000005 40.435 48.30650000000001 40.792Q47.99150000000001 41.149 47.42450000000001 41.149ZM47.42450000000001 46.126Q46.47950000000001 46.126 45.92300000000001 45.559Q45.36650000000001 44.992 45.36650000000001 44.068Q45.36650000000001 43.165 45.92300000000001 42.6085Q46.47950000000001 42.052 47.42450000000001 42.052Q48.41150000000001 42.052 48.94700000000001 42.6085Q49.48250000000001 43.165 49.48250000000001 44.068Q49.48250000000001 44.992 48.94700000000001 45.559Q48.41150000000001 46.126 47.42450000000001 46.126Z"/></svg>'
   };
   var WHEEL = function (sm) { return '<div class="wheel' + (sm ? " sm" : "") + '"><i></i><i></i><i></i><i></i></div>'; };
 
@@ -214,7 +214,7 @@
     });
     if (S.burst) {
       var bp = seatPos(S.burst.pid);
-      h += '<div class="burst" style="--sx:' + bp.x + "%;--sy:" + bp.y + "%;animation-delay:" + -(now - S.burst.start) + 'ms"><div class="seat turn"><div class="nm">' + esc(S.burst.name) + '</div><div class="ydtag">YUDOBA</div></div></div>';
+      h += '<div class="burst" style="--sx:' + bp.x + "%;--sy:" + bp.y + "%;animation-delay:" + -(now - S.burst.start) + 'ms"><div class="seat turn"><div class="nm">' + esc(S.burst.name) + '</div><div class="ydtag">DAPAI!</div></div></div>';
     }
     layer.innerHTML = h;
   }
@@ -277,7 +277,7 @@
 
   function home() {
     return '<div class="page home">' +
-      '<div class="hero"><img src="/icon.svg" alt="YUDOBA"></div>' +
+      '<div class="hero"><img src="/dapai-logo.svg" alt="Dapai"></div>' +
       '<button class="btn btn-main" data-act="go" data-arg="create">Oyun kur</button>' +
       '<div class="tiles">' +
       '<button class="tile t-red" data-act="go" data-arg="join">' + IC.hash + "<span>Kodla oyuna<br>katıl</span></button>" +
@@ -392,7 +392,7 @@
     var passOn = mine && g.drewOnce && !pen;
     var drawOn = mine && (pen || !g.drewOnce);
     h += '<div class="hud"><div class="hud-left">' +
-      '<button class="hbtn yd" data-act="uno" aria-label="YUDOBA"' + (ydOn ? "" : " disabled") + ">" + IC.yd + "</button>" +
+      '<button class="hbtn yd" data-act="uno" aria-label="Dapai"' + (ydOn ? "" : " disabled") + ">" + IC.yd + "</button>" +
       '<button class="hbtn" data-act="pass"' + (passOn ? "" : " disabled") + ">Pas</button>" +
       '<button class="hbtn sm" data-act="view" data-arg="scores">Skor</button>' +
       '<button class="hbtn sm' + (unread ? " unread" : "") + '" data-act="view" data-arg="chat">Mesaj</button></div>';
@@ -410,7 +410,7 @@
       var cls = "seat" + (on ? (pen ? " pen" : " turn") : "") + (!p.connected && !p.isBot ? " off" : "");
       var backs = ""; for (var k = 0; k < Math.min(p.cardCount, 8); k++) backs += "<i></i>";
       h += '<div class="' + cls + '" style="left:' + pos.x + "%;top:" + pos.y + '%"><div class="nm">' + esc(p.name) + (id === S.me.id ? " (sen)" : "") + "</div>" +
-        '<div class="bk">' + backs + '</div><div class="ct">' + p.cardCount + " kart</div>" + (p.saidUno ? '<div class="ydtag">YUDOBA</div>' : "") + "</div>";
+        '<div class="bk">' + backs + '</div><div class="ct">' + p.cardCount + " kart</div>" + (p.saidUno ? '<div class="ydtag">DAPAI!</div>' : "") + "</div>";
     });
     h += "</div>";
 
@@ -610,10 +610,10 @@
       '<div class="steps loose"><div><span class="fan">' + mini(N("blue", 2)) + mini(N("red", 6)) + mini(K("black", "wild")) + '</span><span class="cap">Açık</span></div>' +
       '<span class="swipe">↓</span><div><span class="fan hid">' + mini(N("blue", 2)) + mini(N("red", 6)) + mini(K("black", "wild")) + '</span><span class="cap">Gizli</span></div><span class="swipe">↑</span></div>' +
       '<p class="sub">Kartlarını aşağı kaydırırsan gizlenir, yukarı kaydırınca ya da dokununca açılır. Yanındakiler elini göremez.</p>');
-    h += RS(7, "YUDOBA",
+    h += RS(7, "Dapai!",
       '<div class="flow">' + mini(N("green", 3)) + mini(N("yellow", 9)) + '<span class="cap">2 kart kaldı</span>' + arrow() + '<span class="ydb">' + IC.yd + '</span>' + arrow() +
-      '<span class="seatmini"><b>Fatih</b><i>YUDOBA</i></span></div>' +
-      '<p class="sub">2 kartın kalınca butona bas; adının altında YUDOBA yazar, diğer telefonlar titrer. <b>Basmadan tek karta düşersen 2 ceza kartı</b> çekersin.</p>');
+      '<span class="seatmini"><b>Fatih</b><i>DAPAI!</i></span></div>' +
+      '<p class="sub">2 kartın kalınca butona bas; adının altında DAPAI! yazar, diğer telefonlar titrer. <b>Basmadan tek karta düşersen 2 ceza kartı</b> çekersin.</p>');
     h += RS(8, "Skor ve mesaj",
       '<div class="flow"><span class="hb">Skor</span><span class="hb">Mesaj</span>' + arrow() + '<span class="hb new">Mesaj</span><span class="cap">yeni mesaj var</span></div>' +
       '<p class="sub">Skor ve Mesaj oyundan çıkarmaz; <b>Oyuna dön</b> ile geri gelirsin. Sıra sana gelince üstte "SIRA SENDE" yazar.</p>');
@@ -663,9 +663,9 @@
       '<div>' + mini(K("black", "wild"), "ok") + '<span class="cap">Joker</span></div>' +
       '<div>' + mini(K("red", "skip"), "no") + '<span class="cap">Atla</span></div>' +
       '<div>' + mini(K("blue", "draw2"), "no") + '<span class="cap">+2</span></div></div></div>');
-    h += RS(6, "YUDOBA",
+    h += RS(6, "Dapai!",
       '<div class="flow">' + mini(N("red", 3)) + mini(N("blue", 9)) + arrow() + '<span class="ydb">' + IC.yd + '</span><span class="pill ok">Bas</span></div>' +
-      '<p class="sub">2 kartın kaldığında, cezan yokken YUDOBA butonuna bas. Basmadan tek karta düşersen <b>2 ceza kartı</b> çekersin.</p>');
+      '<p class="sub">2 kartın kaldığında, cezan yokken Dapai butonuna bas. Basmadan tek karta düşersen <b>2 ceza kartı</b> çekersin.</p>');
     var groups = [
       [5, [N("yellow", 7)], "Sayı kartları"],
       [10, [K("green", "skip"), K("red", "reverse"), K("blue", "draw2"), K("black", "wdraw2"), K("black", "wtarget2"), K("black", "wskip2")], "Atla, Ters, +2, Joker +2, Hedef +2, Çift Atla"],

@@ -1,7 +1,7 @@
 {
   "name": "uno-telefon",
-  "version": "87.0.0",
-  "description": "YUDOBA - telefonlardan kodla katılınan çok oyunculu kart oyunu",
+  "version": "88.0.0",
+  "description": "Dapai - telefonlardan kodla katılınan çok oyunculu kart oyunu",
   "main": "server.js",
   "scripts": { "start": "node server.js" },
   "engines": { "node": ">=18" },

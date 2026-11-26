@@ -1,4 +1,6 @@
-# YUDOBA
+# Dapai
+
+Yudoba markasının çok oyunculu telefon kart oyunu.
 
 Telefonlardan 4 haneli kodla katılınan, 2–8 kişilik (boş koltuklar bot) kart oyunu. PWA olarak ana ekrana eklenebilir.
 
@@ -9,7 +11,7 @@ Canlı: https://uno-telefon.onrender.com
 ```
 server.js        Express + Socket.io, odalar, sıra süresi, bağlantılar
 src/rules.js     Deste, kart adetleri, oynanabilirlik, puan
-src/engine.js    Oyun motoru: kart atma, çekme, pas, YUDOBA, tur sonu
+src/engine.js    Oyun motoru: kart atma, çekme, pas, Dapai, tur sonu
 src/bots.js      Botlar ve kopan oyuncunun yerine geçme
 public/app.js    İstemcinin tamamı (ekranlar, kartlar, animasyonlar)
 public/style.css Tüm stiller
