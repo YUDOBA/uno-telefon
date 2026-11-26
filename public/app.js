@@ -1,7 +1,7 @@
 /* Dapai istemcisi — tek dosya */
 (function () {
   "use strict";
-  var CLIENT_V = "V92";
+  var CLIENT_V = "V93";
 
   // ---------- Yardımcılar ----------
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -212,14 +212,38 @@
     S.fx.forEach(function (f) {
       var p = f.from || seatPos(f.pid), delay = -(now - f.start);
       var inner = f.kind.indexOf("play") === 0 ? cardHtml(f.card) : '<div class="cback"></div>';
-      var extra = f.mid ? ";--mx:" + f.mid.x + "%;--my:" + f.mid.y + "%;--rot:" + f.rot + "deg" : "";
-      h += '<div class="fly ' + f.kind + '" style="--sx:' + p.x + "%;--sy:" + p.y + "%" + extra + ";animation-delay:" + delay + 'ms">' + inner + "</div>";
+      if (f.mid) { h += '<div class="fly ' + f.kind + '" data-fx="' + f.start + '" style="' + dropStyle(f, now) + '">' + inner + "</div>"; return; }
+      h += '<div class="fly ' + f.kind + '" style="--sx:' + p.x + "%;--sy:" + p.y + "%;animation-delay:" + delay + 'ms">' + inner + "</div>";
     });
     if (S.burst) {
       var bp = seatPos(S.burst.pid);
       h += '<div class="burst" style="--sx:' + bp.x + "%;--sy:" + bp.y + "%;animation-delay:" + -(now - S.burst.start) + 'ms"><div class="seat turn"><div class="nm">' + esc(S.burst.name) + '</div><div class="ydtag">DAPAI!</div></div></div>';
     }
     layer.innerHTML = h;
+    if (S.fx.some(function (f) { return f.mid; })) startDropLoop();
+  }
+
+  // Sürükleyerek atılan kart: tek bir yumuşak eğri (bırakılan yer → kaydırma yönü → masanın ortası)
+  function dropStyle(f, now) {
+    var MOVE = 1120, t = Math.min(1, Math.max(0, (now - f.start) / MOVE));
+    var e = 1 - Math.pow(1 - t, 3);                     // hızlı çıkış, yumuşak iniş; arada duraksama yok
+    var a = f.from, c = f.mid, b = { x: 50, y: 50 }, u = 1 - e;
+    var x = u * u * a.x + 2 * u * e * c.x + e * e * b.x, y = u * u * a.y + 2 * u * e * c.y + e * e * b.y;
+    var rot = f.rot * e, sc = 1.08 - 0.08 * e;
+    var fade = now - f.start > MOVE ? Math.max(0, 1 - (now - f.start - MOVE) / (f.dur - MOVE)) : 1;
+    return "left:" + x + "%;top:" + y + "%;transform:translate(-50%,-50%) rotate(" + rot + "deg) scale(" + sc + ");opacity:" + fade;
+  }
+  var dropLoopOn = false;
+  function startDropLoop() {
+    if (dropLoopOn) return;
+    dropLoopOn = true;
+    (function step() {
+      var live = S.fx.filter(function (f) { return f.mid; });
+      if (!live.length) { dropLoopOn = false; return; }
+      var now = Date.now();
+      live.forEach(function (f) { var el = document.querySelector('.fly[data-fx="' + f.start + '"]'); if (el) el.setAttribute("style", dropStyle(f, now)); });
+      requestAnimationFrame(step);
+    })();
   }
 
   function splash(done) {
@@ -893,7 +917,7 @@
     var t = $(".table"); if (!t) return null;
     var r = t.getBoundingClientRect(), b = el.getBoundingClientRect();
     var cx = b.left + b.width / 2, cy = b.top + b.height / 2;
-    var len = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / len, uy = dy / len, push = Math.min(r.width, r.height) * 0.28;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / len, uy = dy / len, push = Math.min(r.width, r.height) * 0.35;
     return {
       from: { x: (cx - r.left) / r.width * 100, y: (cy - r.top) / r.height * 100 },
       mid: { x: (cx + ux * push - r.left) / r.width * 100, y: (cy + uy * push - r.top) / r.height * 100 },

@@ -184,13 +184,7 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .fly { position: absolute; z-index: 90; pointer-events: none; }
 .fly.play { animation: flyplay 1.6s ease forwards; }
 .fly.draw { animation: flydraw .8s ease forwards; }
-.fly.play.drop { animation: flydrop 1.6s linear forwards; }
-@keyframes flydrop {
-  0% { left: var(--sx); top: var(--sy); transform: translate(-50%,-50%) rotate(0) scale(1.08); opacity: 1; animation-timing-function: ease-out; }
-  30% { left: var(--mx); top: var(--my); transform: translate(-50%,-50%) rotate(calc(var(--rot) * .4)) scale(1); opacity: 1; animation-timing-function: ease-in-out; }
-  70% { left: 50%; top: 50%; transform: translate(-50%,-50%) rotate(var(--rot)) scale(1); opacity: 1; }
-  100% { left: 50%; top: 50%; transform: translate(-50%,-50%) rotate(var(--rot)) scale(1); opacity: 0; }
-}
+.fly.play.drop { animation: none; will-change: left, top, transform; }
 .fly.draw .cback { width: 44px; height: 66px; }
 @keyframes flyplay {
   0% { left: var(--sx); top: var(--sy); transform: translate(-50%,-50%) rotate(0) scale(.6); opacity: 1; }
