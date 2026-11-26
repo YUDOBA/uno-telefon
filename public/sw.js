@@ -1,7 +1,7 @@
 // Dapai service worker
 // Uygulama açılırken önbellekteki bekleme ekranını gösterir; sunucu uyanınca asıl sayfaya geçer.
 // Oyun dosyaları önbelleğe alınmaz, böylece her güncelleme hemen gelir.
-var CACHE = "yd-boot-v91";
+var CACHE = "yd-boot-v92";
 var BOOT = ["/boot.html", "/icon.svg"];
 
 self.addEventListener("install", function (e) {

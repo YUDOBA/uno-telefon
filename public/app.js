@@ -1,7 +1,7 @@
 /* Dapai istemcisi — tek dosya */
 (function () {
   "use strict";
-  var CLIENT_V = "V91";
+  var CLIENT_V = "V92";
 
   // ---------- Yardımcılar ----------
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -158,6 +158,8 @@
   socket.on("roomClosed", function (m) { leaveLocal(); toast(m || "Oda kapatıldı.", true); });
   socket.on("cardFly", function (d) {
     if (!d || !d.card) return;
+    // Sürükleyerek attığımız kartın animasyonu zaten bizde başladı
+    if (d.fromId === S.me.id && S.skipFlyUntil && Date.now() < S.skipFlyUntil) { S.skipFlyUntil = 0; return; }
     addFx({ kind: "play", pid: d.fromId, card: d.card, dur: 1600 });
   });
   socket.on("cardDraw", function (d) { addFx({ kind: "draw", pid: d && d.toId, dur: 800 }); });
@@ -208,9 +210,10 @@
     if (!layer) { layer = document.createElement("div"); layer.className = "fx-layer"; table.appendChild(layer); }
     var now = Date.now(), h = "";
     S.fx.forEach(function (f) {
-      var p = seatPos(f.pid), delay = -(now - f.start);
-      var inner = f.kind === "play" ? cardHtml(f.card) : '<div class="cback"></div>';
-      h += '<div class="fly ' + f.kind + '" style="--sx:' + p.x + "%;--sy:" + p.y + "%;animation-delay:" + delay + 'ms">' + inner + "</div>";
+      var p = f.from || seatPos(f.pid), delay = -(now - f.start);
+      var inner = f.kind.indexOf("play") === 0 ? cardHtml(f.card) : '<div class="cback"></div>';
+      var extra = f.mid ? ";--mx:" + f.mid.x + "%;--my:" + f.mid.y + "%;--rot:" + f.rot + "deg" : "";
+      h += '<div class="fly ' + f.kind + '" style="--sx:' + p.x + "%;--sy:" + p.y + "%" + extra + ";animation-delay:" + delay + 'ms">' + inner + "</div>";
     });
     if (S.burst) {
       var bp = seatPos(S.burst.pid);
@@ -815,7 +818,7 @@
       as[id] = Math.max(0, Math.min(8 - sum, (as[id] || 0) + +a[1]));
       render();
     },
-    pickCancel: function () { S.pick = null; render(); },
+    pickCancel: function () { S.pick = null; S.dropFly = null; render(); },
     pickOk: sendPick
   };
 
@@ -823,6 +826,7 @@
     var p = S.pick; if (!p) return;
     var assign = Object.keys(p.assign).filter(function (k) { return p.assign[k] > 0; }).map(function (k) { return { playerId: k, n: p.assign[k] }; });
     socket.emit("play", { cardIndex: p.i, chosenColor: p.color, targetId: p.target, assign: assign });
+    if (S.dropFly) { launchDrop(p.card, S.dropFly); S.dropFly = null; }
     S.pick = null; S.picked = null;
     render();
   }
@@ -875,9 +879,31 @@
     dragEndAt = Date.now();
     var wrap = $(".hand-wrap"), top = wrap ? wrap.getBoundingClientRect().top : 0;
     var c = myHand()[d.i], ok = false;
-    if (!cancel && (e.clientY < top - 10 || e.clientY - d.y < -110)) ok = tryPlay(d.i);
-    if (ok && c && !NEEDS_COLOR[c.type] && d.el.isConnected) d.el.style.opacity = "0";
+    var drop = null;
+    if (!cancel && (e.clientY < top - 10 || e.clientY - d.y < -110)) {
+      drop = dropInfo(d.el, e.clientX - d.x, e.clientY - d.y);
+      ok = tryPlay(d.i);
+    }
+    if (ok && c && !NEEDS_COLOR[c.type]) { if (d.el.isConnected) d.el.style.opacity = "0"; launchDrop(c, drop); }
+    else if (ok && c) S.dropFly = drop; // renk ekranı kapanınca uçacak
     else if (d.el.isConnected) dragBack(d.el);
+  }
+  // Bırakılan kartın masaya göre konumu ve kaydırma yönü
+  function dropInfo(el, dx, dy) {
+    var t = $(".table"); if (!t) return null;
+    var r = t.getBoundingClientRect(), b = el.getBoundingClientRect();
+    var cx = b.left + b.width / 2, cy = b.top + b.height / 2;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / len, uy = dy / len, push = Math.min(r.width, r.height) * 0.28;
+    return {
+      from: { x: (cx - r.left) / r.width * 100, y: (cy - r.top) / r.height * 100 },
+      mid: { x: (cx + ux * push - r.left) / r.width * 100, y: (cy + uy * push - r.top) / r.height * 100 },
+      rot: ux < -0.05 ? -360 : 360
+    };
+  }
+  function launchDrop(card, drop) {
+    if (!drop) return;
+    S.skipFlyUntil = Date.now() + 4000;
+    addFx({ kind: "play drop", card: { color: card.color, type: card.type, value: card.value }, from: drop.from, mid: drop.mid, rot: drop.rot, dur: 1600 });
   }
   document.addEventListener("pointerup", function (e) { dragEnd(e, false); });
   document.addEventListener("pointercancel", function (e) { dragEnd(e, true); });
