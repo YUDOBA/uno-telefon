@@ -142,7 +142,9 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .hbtn { width: 62px; height: 56px; border: 0; border-radius: 10px; background: var(--panel2); font-weight: 800; font-size: .85rem; padding: 0; }
 .hbtn.sm { height: 30px; font-size: .78rem; }
 .hbtn:disabled { opacity: .35; }
-.hbtn.yd { background: transparent; overflow: hidden; }
+.hbtn.yd { background: #161B2E; overflow: hidden; }
+.hbtn.yd:not(:disabled) { animation: ydpulse 1s ease-in-out infinite; }
+@keyframes ydpulse { 0%, 100% { box-shadow: 0 0 0 2px #F5C400; } 50% { box-shadow: 0 0 0 5px #F5C400, 0 0 16px 4px rgba(245,196,0,.65); } }
 .hbtn.yd svg { width: 100%; height: 100%; display: block; }
 .hbtn.unread { background: #16a34a; color: #fff; }
 .hud-mid { flex: 1; text-align: center; align-self: center; font-size: .78rem; color: var(--muted); }
@@ -285,7 +287,7 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .match .top { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-right: 14px; border-right: 2px dashed var(--panel2); width: 76px; text-align: center; }
 .match .opts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; flex: 1; }
 .match .opts > div { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
-.ydb { width: 44px; height: 44px; border-radius: 10px; overflow: hidden; display: inline-block; }
+.ydb { width: 44px; height: 44px; border-radius: 10px; overflow: hidden; display: inline-block; box-shadow: 0 0 0 2px #F5C400; }
 .ydb svg { width: 100%; height: 100%; display: block; }
 .pts { display: flex; flex-direction: column; gap: 8px; }
 .pr { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 10px; align-items: center; background: #0f192b; border-radius: 12px; padding: 8px 10px; }
