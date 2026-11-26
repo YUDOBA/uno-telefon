@@ -149,10 +149,13 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .hbtn.unread { background: #16a34a; color: #fff; }
 .hud-mid { flex: 1; text-align: center; align-self: center; font-size: .78rem; color: var(--muted); }
 .pile { width: 62px; text-align: center; }
-.pile button { width: 62px; height: 86px; border-radius: 10px; border: 3px solid #f3f3f3; background: linear-gradient(rgba(22,27,46,.74), rgba(22,27,46,.74)), #161B2E url(/card-back.svg) center / cover no-repeat; color: #fff; text-shadow: 0 1px 3px #000;
+.pile button { width: 62px; height: 86px; border-radius: 10px; border: 3px solid #f3f3f3; background: #161B2E url(/card-back.svg) center / cover no-repeat; color: #fff; text-shadow: 0 1px 3px #000;
   font-weight: 900; font-size: .8rem; line-height: 1.2; box-shadow: 0 6px 12px rgba(0,0,0,.35); padding: 2px; }
-.pile button:disabled { opacity: .4; }
-.pile button.pen { background: linear-gradient(160deg, #0f4a6b, #1f87b8); }
+.pile button:disabled { opacity: 1; }
+.pile button.go { background: linear-gradient(rgba(22,27,46,.72), rgba(22,27,46,.72)), #161B2E url(/card-back.svg) center / cover no-repeat; animation: pilego 1s ease-in-out infinite; }
+.pile button.go.pen { background: linear-gradient(rgba(15,74,107,.82), rgba(31,135,184,.82)), #161B2E url(/card-back.svg) center / cover no-repeat; animation-name: pilepen; }
+@keyframes pilego { 0%, 100% { box-shadow: 0 0 0 2px #F5C400; color: #fff; } 50% { box-shadow: 0 0 0 5px #F5C400, 0 0 16px 4px rgba(245,196,0,.6); color: #FFE27A; } }
+@keyframes pilepen { 0%, 100% { box-shadow: 0 0 0 2px #7ecbff; color: #fff; } 50% { box-shadow: 0 0 0 5px #7ecbff, 0 0 16px 4px rgba(126,203,255,.6); color: #d6f0ff; } }
 .pile small { display: block; margin-top: 3px; font-size: .75rem; font-weight: 700; color: #c9d6ea; }
 
 .table { position: relative; flex: 1; min-height: 170px; }
@@ -209,7 +212,7 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 /* Tam ekran seçim / ceza katmanı */
 .overlay { position: fixed; inset: 0; z-index: 300; background: rgba(5,9,18,.96); display: flex; flex-direction: column;
   padding: calc(var(--safe-t) + 16px) 16px calc(var(--safe-b) + 16px); overflow: hidden; }
-.overlay .body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; justify-content: center; max-width: 440px; width: 100%; margin: 0 auto; }
+.overlay .body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; justify-content: safe center; max-width: 440px; width: 100%; margin: 0 auto; }
 .overlay h2 { text-align: center; font-size: 1.25rem; margin: 0; }
 .overlay .sub { text-align: center; margin: 0; }
 .overlay .play-card { display: flex; justify-content: center; }
@@ -223,7 +226,6 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .targets .arow { display: flex; align-items: center; justify-content: space-between; background: var(--panel); border-radius: 12px; padding: 6px 8px 6px 12px; }
 .overlay .foot { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; max-width: 440px; width: 100%; margin: 0 auto; }
 .overlay .foot .btn { margin: 0; }
-.pen-big { font-size: 3.6rem; font-weight: 900; text-align: center; color: #7ecbff; line-height: 1; }
 
 /* Skor */
 .score-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
@@ -246,13 +248,7 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 /* Açılış logosu */
 #splash { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; background: #0b1220; }
 #splash.out { animation: fade .35s ease forwards; }
-#splash .box { width: 220px; height: 220px; border-radius: 28px; overflow: hidden; position: relative; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
-#splash .q { position: absolute; width: 50%; height: 50%; }
-#splash .q1 { left: 0; top: 0; background: var(--b-red); } #splash .q2 { right: 0; top: 0; background: var(--b-yellow); }
-#splash .q3 { left: 0; bottom: 0; background: var(--b-green); } #splash .q4 { right: 0; bottom: 0; background: var(--b-blue); }
-#splash .in { position: absolute; inset: 16%; background: #fff; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  transform: scale(.6); opacity: 0; animation: pop .45s ease .25s forwards; color: #111; font-weight: 900; }
-#splash .in b { font-size: 1.75rem; line-height: 1; } #splash .in span { font-size: 2.4rem; line-height: .95; }
+#splash .lg { width: min(300px, 76vw); height: auto; transform: scale(.6); opacity: 0; animation: pop .45s ease .25s forwards; }
 @keyframes pop { to { transform: scale(1); opacity: 1; } }
 @keyframes fade { to { opacity: 0; visibility: hidden; } }
 
@@ -336,3 +332,10 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .steps > div { max-width: 70px; flex: 1; }
 .steps .ar { font-size: 1rem; }
 .steps.loose > div { max-width: none; flex: 0 0 auto; } .steps.loose { gap: 10px; }
+
+/* Seçim ekranında kendi elin */
+.ov-hand { max-width: 440px; width: 100%; margin: 10px auto 12px; }
+.ov-hand .sub { font-size: .85rem; margin-bottom: 6px !important; }
+.ov-hand .row { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; max-height: 158px; overflow-y: auto; }
+.ov-hand .mini { width: 46px; height: 70px; }
+.ov-hand .mini > .ucard { transform: scale(.7); }

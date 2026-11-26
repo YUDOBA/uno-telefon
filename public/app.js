@@ -1,7 +1,7 @@
 /* Dapai istemcisi — tek dosya */
 (function () {
   "use strict";
-  var CLIENT_V = "V89";
+  var CLIENT_V = "V90";
 
   // ---------- Yardımcılar ----------
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -224,7 +224,7 @@
     if (old) old.remove();
     var el = document.createElement("div");
     el.id = "splash";
-    el.innerHTML = '<div class="box"><div class="q q1"></div><div class="q q2"></div><div class="q q3"></div><div class="q q4"></div><div class="in"><b>YUDO</b><span>BA</span></div></div>';
+    el.innerHTML = '<img class="lg" src="/dapai-logo.svg" alt="Dapai">';
     document.body.appendChild(el);
     setTimeout(function () { el.classList.add("out"); }, 1650);
     setTimeout(function () { el.remove(); if (done) done(); }, 2050);
@@ -397,7 +397,9 @@
       '<button class="hbtn sm" data-act="view" data-arg="scores">Skor</button>' +
       '<button class="hbtn sm' + (unread ? " unread" : "") + '" data-act="view" data-arg="chat">Mesaj</button></div>';
     h += '<div class="hud-mid">' + (mine ? (pen ? "Ceza sende" : g.drewOnce ? "At ya da Pas" : "Sıra sende") : "") + "</div>";
-    h += '<div class="pile"><button data-act="draw"' + (drawOn ? "" : " disabled") + (pen && mine ? ' class="pen">Ceza<br>çek<br>+' + g.penaltyLeft : ">Kart<br>çek") + "</button><small>" + g.deckCount + " kart</small></div></div>";
+    var pileTxt = !drawOn ? "" : (pen ? "Ceza<br>çek<br>+" + g.penaltyLeft : "Kart<br>çek");
+    var pileCls = drawOn ? (pen ? "go pen" : "go") : "";
+    h += '<div class="pile"><button data-act="draw" class="' + pileCls + '" aria-label="' + (pen && mine ? "Ceza çek" : "Kart çek") + '"' + (drawOn ? "" : " disabled") + ">" + pileTxt + "</button><small>" + g.deckCount + " kart</small></div></div>";
 
     // Masa
     h += '<div class="table">';
@@ -427,7 +429,6 @@
 
     // Katmanlar
     if (S.pick) h += pickOverlay();
-    else if (mine && pen && !canStack()) h += penaltyOverlay();
     return h + "</div>";
   }
 
@@ -488,19 +489,16 @@
       ready = ready && sum === 8;
     }
     h += "</div>";
+    var rest = myHand().map(function (x, i) { return { c: x, i: i }; }).filter(function (it) { return it.i !== p.i; }).sort(handSort);
+    h += '<div class="ov-hand"><p class="sub">Elindeki kartlar (' + rest.length + ")</p><div class=\"row\">";
+    rest.forEach(function (it) { h += mini(it.c); });
+    h += "</div></div>";
     var simple = !needTarget && !custom;
     h += '<div class="foot"><button class="btn btn-ghost" data-act="pickCancel">Vazgeç</button>' +
       (simple ? '<div class="sub" style="align-self:center;text-align:center">Renge dokununca atılır</div>' : '<button class="btn btn-main" data-act="pickOk"' + (ready ? "" : " disabled") + ">Tamam</button>") + "</div>";
     return h + "</div>";
   }
 
-  function penaltyOverlay() {
-    var g = S.state.game;
-    return '<div class="overlay"><div class="body"><h2>Ceza</h2><div class="pen-big">+' + g.penaltyLeft + "</div>" +
-      '<p class="sub">' + esc(g.noticeYou || g.notice) + "</p>" +
-      '<button class="btn btn-main" data-act="draw">Cezayı çek (' + g.penaltyLeft + " kart)</button>" +
-      '<button class="btn btn-ghost" data-act="view" data-arg="scores">Skor</button></div></div>';
-  }
 
   function lamp() {
     var st = S.state, g = st.game;
@@ -604,7 +602,7 @@
       '<p class="sub">Sarı çerçeveli kartlar o an atılabilir, soluk kartlar atılamaz. Siyah kartlarda renk seçme ekranı açılır.</p>');
     h += RS(5, "Kart çekmek ve ceza",
       '<div class="flow"><span class="pilecard">Kart<br>çek</span>' + arrow() + '<span class="pill">1 kart</span>' + arrow() + '<span class="pill ok">At</span><span class="or">ya da</span><span class="pill">Pas</span></div>' +
-      '<div class="flow" style="margin-top:8px"><span class="pilecard pen">Ceza<br>çek<br>+4</span><span class="cap" style="flex:1;min-width:150px">Ceza gelince deste maviye döner ve ekranda <b>Cezayı çek</b> düğmesi çıkar. Tek dokunuşla cezanın tamamı çekilir.</span></div>' +
+      '<div class="flow" style="margin-top:8px"><span class="pilecard pen">Ceza<br>çek<br>+4</span><span class="cap" style="flex:1;min-width:150px">Ceza gelince deste maviye döner ve yanıp söner. <b>Desteye dokununca</b> cezanın tamamı çekilir.</span></div>' +
       '<p class="sub">Cezasız sırada 1 kart çekersin; sıra kendiliğinden geçmez, ya atarsın ya da Pas dersin.</p>');
     h += RS(6, "Elini gizle",
       '<div class="steps loose"><div><span class="fan">' + mini(N("blue", 2)) + mini(N("red", 6)) + mini(K("black", "wild")) + '</span><span class="cap">Açık</span></div>' +
