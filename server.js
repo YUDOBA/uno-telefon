@@ -10,7 +10,7 @@ const R = require("./src/rules");
 const E = require("./src/engine");
 const B = require("./src/bots");
 
-const VERSION = "V90";
+const VERSION = "V91";
 const PORT = process.env.PORT || 3000;
 const STORE = path.join(__dirname, "rooms-v85.json");
 const EMPTY_CLOSE_MS = 45000;
@@ -98,6 +98,7 @@ function publicRoom(room, viewerId) {
     lastRoundPts: room.lastRoundPts || {}, lastWinnerId: room.lastWinnerId || null, winBonus: R.WIN_BONUS,
     gameOver: !!room.gameOver, readyNext: room.readyNext || {}, sawScores: room.sawScores || {},
     chat: room.chat || [],
+    leftHands: room.status === "winnerShow" && g ? Object.fromEntries(room.players.map((p) => [p.id, (g.hands[p.id] || []).map((c) => ({ color: c.color, type: c.type, value: c.value }))])) : null,
     players: room.players.map((p) => ({
       id: p.id, name: p.name, connected: !!p.connected, isBot: !!p.isBot,
       cardCount: g && g.hands[p.id] ? g.hands[p.id].length : 0,
@@ -108,7 +109,7 @@ function publicRoom(room, viewerId) {
       top: { color: top.color, type: top.type, value: top.value },
       chosenColor: g.chosenColor, direction: g.direction, actorId: actor,
       notice: g.notice || "", noticeYou: (g.noticeYou && g.noticeYou[viewerId]) || "",
-      hand: (g.hands[viewerId] || []).map((c) => ({ color: c.color, type: c.type, value: c.value, fresh: !!c.fresh && actor === viewerId })),
+      hand: (g.hands[viewerId] || []).map((c) => ({ color: c.color, type: c.type, value: c.value, fresh: !!c.fresh })),
       deckCount: g.deck.length, plusStack: g.plusStack || 0,
       stackKind: penal ? g.stackKind : null, isPenalty: penal,
       penaltyLeft: g.drawQueue.length ? g.drawQueue[0].left : (g.plusStack || 0),
@@ -118,13 +119,21 @@ function publicRoom(room, viewerId) {
   };
 }
 
+// Oyuncu yeni bir sırada hamle yapınca, önceki sıralardan kalan "yeni" işaretleri silinir
+function clearOldFresh(room, pid) {
+  const g = room.game;
+  if (!g || !g.hands || !g.hands[pid] || E.actorOf(g) !== pid) return;
+  g.hands[pid].forEach((c) => { if (c.fresh && c.fresh !== room._freshTok) delete c.fresh; });
+}
+
 function emitRoom(room) {
   if (rooms.get(room.code) !== room) return;
   const g = room.game;
-  // Sırası geçen oyuncunun "yeni çekildi" işaretleri silinir
+  // "Yeni" işaretleri: her sıra değişiminde oturum numarası artar; yeni çekilen kart o oturumla damgalanır
   if (g && g.hands) {
     const actor = E.actorOf(g);
-    Object.keys(g.hands).forEach((pid) => { if (pid !== actor) g.hands[pid].forEach((c) => { delete c.fresh; }); });
+    if (actor !== room._freshActor) { room._freshTok = (room._freshTok || 0) + 1; room._freshActor = actor; }
+    Object.keys(g.hands).forEach((pid) => g.hands[pid].forEach((c) => { if (c.fresh === true) c.fresh = room._freshTok; }));
   }
   botsAcknowledge(room);
   updateClock(room);
@@ -337,17 +346,18 @@ io.on("connection", (socket) => {
     emitRoom(room);
   });
 
-  const act = (fn) => (d) => {
+  const act = (fn, move) => (d) => {
     const { room, me } = ctx();
     if (!room) return socket.emit("roomLost");
+    if (move) clearOldFresh(room, me.id);
     const fx = { events: [] };
     const err = fn(room, me.id, d || {}, fx);
     if (err) { fail(err); return emitRoom(room); }
     flush(room, fx);
   };
-  socket.on("play", act((room, pid, d, fx) => E.play(room, pid, d, fx)));
-  socket.on("draw", act((room, pid, d, fx) => E.draw(room, pid, fx)));
-  socket.on("pass", act((room, pid) => E.pass(room, pid)));
+  socket.on("play", act((room, pid, d, fx) => E.play(room, pid, d, fx), true));
+  socket.on("draw", act((room, pid, d, fx) => E.draw(room, pid, fx), true));
+  socket.on("pass", act((room, pid) => E.pass(room, pid), true));
   socket.on("uno", act((room, pid, d, fx) => E.sayUno(room, pid, fx)));
 
   socket.on("sawScores", () => {

@@ -120,7 +120,10 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .wheel.sm { width: 22px; height: 22px; }
 .wheel i:nth-child(1) { background: var(--red); } .wheel i:nth-child(2) { background: var(--yellow); }
 .wheel i:nth-child(3) { background: var(--green); } .wheel i:nth-child(4) { background: var(--blue); }
-.fresh-dot { position: absolute; left: 6px; bottom: 6px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.4); z-index: 3; }
+.fresh-tag { position: absolute; left: 2px; top: 22px; z-index: 3; background: #F5C400; color: #161B2E; font-size: 8px; font-weight: 900; letter-spacing: .2px;
+  line-height: 1; padding: 2px 3px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.ucard.picked .fresh-tag, .ucard.dragging .fresh-tag, .fly .fresh-tag, .felt .fresh-tag { display: none; }
+.hand .ucard.dragging { z-index: 200 !important; transition: none; box-shadow: 0 16px 30px rgba(0,0,0,.6); }
 .cback { width: 66px; height: 100px; border-radius: 10px; border: 3px solid #f3f3f3; background: #161B2E url(/card-back.svg) center / cover no-repeat; box-shadow: 0 6px 14px rgba(0,0,0,.4); }
 
 /* Kart rehberi */
@@ -130,7 +133,8 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 
 /* ---------- Oyun ekranı ---------- */
 .game { gap: 6px; }
-.topbar { display: flex; align-items: center; gap: 8px; min-height: 28px; }
+.topbar { display: flex; align-items: center; gap: 8px; min-height: 28px; position: relative; }
+.topbar .tb-logo { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); height: 24px; width: auto; pointer-events: none; }
 .topbar .sp { flex: 1; }
 .clock { min-width: 44px; padding: 2px 8px; border-radius: 9px; border: 2px solid var(--accent); color: var(--accent); font-weight: 900; text-align: center; font-size: 1rem; }
 .clock.warn { border-color: #ff4d4d; color: #ffb0b0; background: #3a1010; }
@@ -212,26 +216,32 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 /* Tam ekran seçim / ceza katmanı */
 .overlay { position: fixed; inset: 0; z-index: 300; background: rgba(5,9,18,.96); display: flex; flex-direction: column;
   padding: calc(var(--safe-t) + 16px) 16px calc(var(--safe-b) + 16px); overflow: hidden; }
-.overlay .body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; justify-content: safe center; max-width: 440px; width: 100%; margin: 0 auto; }
+.overlay .body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; justify-content: safe center; max-width: 440px; width: 100%; margin: 0 auto; }
 .overlay h2 { text-align: center; font-size: 1.25rem; margin: 0; }
 .overlay .sub { text-align: center; margin: 0; }
 .overlay .play-card { display: flex; justify-content: center; }
-.colors { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.colors button { height: 64px; border: 3px solid transparent; border-radius: 14px; color: #fff; font-weight: 900; font-size: 1.05rem; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.colors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.colors button { height: 54px; font-size: .9rem !important; border: 3px solid transparent; border-radius: 14px; color: #fff; font-weight: 900; font-size: 1.05rem; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
 .colors button.on { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.35); }
 .colors .c-yellow { color: #2a2200; text-shadow: none; }
-.targets { display: flex; flex-direction: column; gap: 6px; max-height: 36vh; overflow-y: auto; }
-.targets button { width: 100%; text-align: left; padding: 11px 12px; border: 2px solid transparent; border-radius: 12px; background: var(--panel); font-weight: 700; display: flex; justify-content: space-between; }
+.targets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.targets button { width: 100%; text-align: left; padding: 8px 10px; flex-direction: column; gap: 2px; min-height: 48px; border: 2px solid transparent; border-radius: 12px; background: var(--panel); font-weight: 700; display: flex; justify-content: space-between; }
 .targets button.on { border-color: var(--accent); background: #2f2a10; }
-.targets .arow { display: flex; align-items: center; justify-content: space-between; background: var(--panel); border-radius: 12px; padding: 6px 8px 6px 12px; }
+.targets .arow { display: flex; flex-direction: column; align-items: stretch; gap: 0; background: var(--panel); border-radius: 12px; padding: 4px 8px 5px; }
+.targets .arow .p-name { font-weight: 700; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.targets .arow .stepper { display: flex; justify-content: space-between; align-items: center; }
+.targets .arow .stepper button { width: 38px; height: 32px; font-size: 1.15rem; }
+.targets .arow .stepper b { font-size: 1.05rem; }
+.targets button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.targets button span + span { font-size: .78rem; color: var(--muted); font-weight: 600; }
 .overlay .foot { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; max-width: 440px; width: 100%; margin: 0 auto; }
 .overlay .foot .btn { margin: 0; }
 
 /* Skor */
 .score-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
-.score-table th { color: var(--muted); font-weight: 700; font-size: .78rem; text-align: right; padding: 6px 4px; }
+.score-table th { color: var(--muted); font-weight: 700; font-size: .72rem; line-height: 1.15; text-align: right; padding: 6px 3px; vertical-align: bottom; }
 .score-table th:first-child, .score-table td:first-child { text-align: left; }
-.score-table td { padding: 8px 4px; border-top: 1px solid var(--panel2); text-align: right; font-weight: 700; }
+.score-table td { padding: 8px 3px; border-top: 1px solid var(--panel2); text-align: right; font-weight: 700; }
 .score-table td:first-child { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .score-table tr.me td { color: var(--accent); }
 .score-table .ok { color: #4ade80; font-size: .8rem; }
@@ -334,8 +344,35 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .steps.loose > div { max-width: none; flex: 0 0 auto; } .steps.loose { gap: 10px; }
 
 /* Seçim ekranında kendi elin */
-.ov-hand { max-width: 440px; width: 100%; margin: 10px auto 12px; }
+.ov-hand { max-width: 440px; width: 100%; margin: 6px auto 10px; }
 .ov-hand .sub { font-size: .85rem; margin-bottom: 6px !important; }
 .ov-hand .row { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; max-height: 158px; overflow-y: auto; }
 .ov-hand .mini { width: 46px; height: 70px; }
 .ov-hand .mini > .ucard { transform: scale(.7); }
+
+/* Seçim ekranı başlığı: küçük kart + ad */
+.ov-head { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.ov-head .mini { width: 40px; height: 60px; } .ov-head .mini > .ucard { transform: scale(.6); }
+.ov-hand .row { flex-wrap: nowrap !important; gap: 0 !important; overflow: visible !important; max-height: none !important; }
+.ov-hand .ovc { display: inline-block; flex-shrink: 0; }
+
+/* Tur sonu: elde kalan kartlar */
+.left-cards { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.left-cards > .sub { text-align: left; margin: 0; }
+.lc-row { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid var(--panel2); }
+.lc-name { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.lc-name small { color: var(--muted); font-weight: 700; }
+.lc-cards { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* Kısa ekranlar (iPhone SE gibi): seçim ekranı kaydırmasız sığsın */
+@media (max-height: 720px) {
+  .overlay { padding-top: calc(var(--safe-t) + 10px); padding-bottom: calc(var(--safe-b) + 10px); }
+  .overlay .body { gap: 7px; }
+  .overlay h2 { font-size: 1.1rem; }
+  .colors button { height: 44px; }
+  .targets { gap: 5px; }
+  .targets button { min-height: 42px; padding: 6px 10px; }
+  .targets .arow .stepper button { height: 28px; }
+  .ov-hand { margin: 4px auto 8px; }
+  .ov-hand .mini { width: 40px; height: 60px; } .ov-hand .mini > .ucard { transform: scale(.6); }
+}

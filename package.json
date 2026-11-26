@@ -1,6 +1,6 @@
 {
   "name": "uno-telefon",
-  "version": "90.0.0",
+  "version": "91.0.0",
   "description": "Dapai - telefonlardan kodla katılınan çok oyunculu kart oyunu",
   "main": "server.js",
   "scripts": { "start": "node server.js" },

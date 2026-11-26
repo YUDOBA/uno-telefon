@@ -1,7 +1,7 @@
 /* Dapai istemcisi — tek dosya */
 (function () {
   "use strict";
-  var CLIENT_V = "V90";
+  var CLIENT_V = "V91";
 
   // ---------- Yardımcılar ----------
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -94,7 +94,7 @@
     return cr + '<div class="oval">' + mid + "</div>";
   }
   function cardHtml(c, cls, attrs) {
-    return '<div class="ucard ' + c.color + " " + (cls || "") + '"' + (attrs || "") + ">" + cardFace(c) + (c.fresh ? '<span class="fresh-dot"></span>' : "") + "</div>";
+    return '<div class="ucard ' + c.color + " " + (cls || "") + '"' + (attrs || "") + ">" + cardFace(c) + (c.fresh ? '<span class="fresh-tag">YENİ</span>' : "") + "</div>";
   }
   function cardName(c) {
     if (c.type === "number") return COLOR_TR[c.color] + " " + c.value;
@@ -384,7 +384,7 @@
     var note = st.paused ? "Sıradaki oyuncu koptu. Aynı adla dönmesi bekleniyor." : (g.noticeYou || g.notice);
 
     var h = '<div class="page game">';
-    h += '<div class="topbar"><strong>Oda ' + esc(st.code) + "</strong>" + (st.turnSeconds ? '<span class="clock" id="clock">' + st.turnSeconds + "</span>" : "") +
+    h += '<div class="topbar"><img class="tb-logo" src="/dapai-logo.svg" alt="Dapai"><strong>Oda ' + esc(st.code) + "</strong>" + (st.turnSeconds ? '<span class="clock" id="clock">' + st.turnSeconds + "</span>" : "") +
       '<span class="sp"></span><span class="badge">Tur ' + st.roundNow + "/" + st.roundsTotal + "</span></div>";
     h += '<div class="notice' + (g.noticeYou ? " me" : "") + '">' + esc(note) + "</div>";
 
@@ -463,7 +463,7 @@
     var others = st.seats.map(player).filter(function (x) { return x && x.id !== S.me.id; });
     var needTarget = c.type === "wtarget2" || c.type === "swap", custom = c.type === "custom";
     var h = '<div class="overlay"><div class="body">';
-    h += "<h2>" + esc(cardName(c)) + '</h2><div class="play-card">' + cardHtml(c) + "</div>";
+    h += '<div class="ov-head">' + mini(c) + "<h2>" + esc(cardName(c)) + "</h2></div>";
     h += '<p class="sub">Yeni rengi seç</p><div class="colors">';
     ["yellow", "green", "red", "blue"].forEach(function (k) {
       h += '<button class="c-' + k + (p.color === k ? " on" : "") + '" style="background:var(--' + k + ')" data-act="pickColor" data-arg="' + k + '">' + COLOR_TR[k] + "</button>";
@@ -490,8 +490,9 @@
     }
     h += "</div>";
     var rest = myHand().map(function (x, i) { return { c: x, i: i }; }).filter(function (it) { return it.i !== p.i; }).sort(handSort);
+    var avail = Math.min(440, window.innerWidth - 32), stepW = rest.length > 1 ? Math.min(50, (avail - 46) / (rest.length - 1)) : 50;
     h += '<div class="ov-hand"><p class="sub">Elindeki kartlar (' + rest.length + ")</p><div class=\"row\">";
-    rest.forEach(function (it) { h += mini(it.c); });
+    rest.forEach(function (it, k) { h += '<span class="ovc" style="margin-left:' + (k ? Math.round(stepW - 46) : 0) + 'px">' + mini(it.c) + "</span>"; });
     h += "</div></div>";
     var simple = !needTarget && !custom;
     h += '<div class="foot"><button class="btn btn-ghost" data-act="pickCancel">Vazgeç</button>' +
@@ -511,14 +512,30 @@
     var st = S.state;
     var rows = st.players.slice().sort(function (a, b) { return (a.score + a.timeScore) - (b.score + b.timeScore); });
     var showRound = st.status === "winnerShow";
-    var h = '<table class="score-table"><tr><th>Oyuncu</th>' + (showRound ? "<th>Bu tur</th>" : "") + "<th>Kart</th><th>Süre</th><th>Toplam</th></tr>";
+    var left = showRound ? (st.leftHands || {}) : null;
+    var h = '<table class="score-table"><tr><th>Oyuncu</th>' + (showRound ? "<th>Elde</th><th>Bu tur</th>" : "") + "<th>Kart<br>puanı</th><th>Süre</th><th>Toplam</th></tr>";
     rows.forEach(function (p) {
       var ready = showRound && !st.gameOver && st.readyNext[p.id] ? ' <span class="ok">✓</span>' : "";
       var rp = st.lastRoundPts[p.id] != null ? st.lastRoundPts[p.id] - (p.id === st.lastWinnerId ? (st.winBonus || WIN_BONUS) : 0) : 0;
-      h += '<tr class="' + (p.id === S.me.id ? "me" : "") + '"><td>' + esc(p.name) + ready + "</td>" + (showRound ? "<td>" + (rp > 0 ? "+" : "") + rp + "</td>" : "") +
+      h += '<tr class="' + (p.id === S.me.id ? "me" : "") + '"><td>' + esc(p.name) + ready + "</td>" + (showRound ? "<td>" + (left[p.id] ? left[p.id].length : 0) + "</td><td>" + (rp > 0 ? "+" : "") + rp + "</td>" : "") +
         "<td>" + p.score + "</td><td>" + p.timeScore + "</td><td>" + (p.score + p.timeScore) + "</td></tr>";
     });
     return h + "</table>";
+  }
+
+  // Tur sonunda her oyuncunun elinde kalan kartlar
+  function leftCards() {
+    var st = S.state, left = st.leftHands; if (!left) return "";
+    var rows = st.players.filter(function (p) { return left[p.id] && left[p.id].length; })
+      .sort(function (a, b) { return (st.lastRoundPts[b.id] || 0) - (st.lastRoundPts[a.id] || 0); });
+    if (!rows.length) return "";
+    var h = '<div class="panel left-cards"><p class="sub">Elde kalan kartlar</p>';
+    rows.forEach(function (p) {
+      h += '<div class="lc-row"><div class="lc-name"><b>' + esc(p.name) + "</b><small>" + left[p.id].length + " kart · " + (st.lastRoundPts[p.id] || 0) + " puan</small></div><div class=\"lc-cards\">";
+      left[p.id].map(function (c) { return { c: c }; }).sort(handSort).forEach(function (it) { h += mini(it.c); });
+      h += "</div></div>";
+    });
+    return h + "</div>";
   }
 
   function scoresScreen() {
@@ -563,7 +580,7 @@
         '<button class="btn btn-main" data-act="seeScores">Skor tabelası</button></div></div>';
     }
     var nReady = st.players.filter(function (p) { return st.readyNext[p.id]; }).length;
-    var h = '<div class="page"><h1>Skor</h1><div class="scroll"><div class="panel"><p class="sub">' + title + " · Tur " + st.roundNow + " / " + st.roundsTotal + "</p>" + scoreTable() + "</div></div>";
+    var h = '<div class="page"><h1>Skor</h1><div class="scroll"><div class="panel"><p class="sub">' + title + " · Tur " + st.roundNow + " / " + st.roundsTotal + "</p>" + scoreTable() + "</div>" + leftCards() + "</div>";
     if (!st.gameOver) {
       if (!st.readyNext[S.me.id]) h += '<button class="btn btn-main" data-act="ready">Sonraki tur</button><p class="sub" style="text-align:center;margin-top:6px">Herkes basınca tur başlar (' + nReady + "/" + st.players.length + ")</p>";
       else h += '<p class="sub" style="text-align:center">Hazırsın. Diğerleri bekleniyor (' + nReady + "/" + st.players.length + ")</p>";
@@ -599,7 +616,7 @@
       '<div class="steps"><div><span class="frame">' + mini(N("red", 7)) + '</span><span class="cap">Sarı çerçeve: atılabilir</span></div>' + arrow() +
       '<div><span class="lift">' + mini(N("red", 7)) + '</span><span class="cap">1. dokunuş: kart kalkar</span></div>' + arrow() +
       '<div><span class="tocenter">' + mini(N("red", 7)) + '</span><span class="cap">2. dokunuş: atılır</span></div></div>' +
-      '<p class="sub">Sarı çerçeveli kartlar o an atılabilir, soluk kartlar atılamaz. Siyah kartlarda renk seçme ekranı açılır.</p>');
+      '<p class="sub">Sarı çerçeveli kartlar o an atılabilir, soluk kartlar atılamaz. İstersen kartı parmağınla <b>yukarı, masaya doğru kaydırarak</b> da atabilirsin. Siyah kartlarda renk seçme ekranı açılır. Yeni çektiğin kartların köşesinde sarı <b>YENİ</b> etiketi olur.</p>');
     h += RS(5, "Kart çekmek ve ceza",
       '<div class="flow"><span class="pilecard">Kart<br>çek</span>' + arrow() + '<span class="pill">1 kart</span>' + arrow() + '<span class="pill ok">At</span><span class="or">ya da</span><span class="pill">Pas</span></div>' +
       '<div class="flow" style="margin-top:8px"><span class="pilecard pen">Ceza<br>çek<br>+4</span><span class="cap" style="flex:1;min-width:150px">Ceza gelince deste maviye döner ve yanıp söner. <b>Desteye dokununca</b> cezanın tamamı çekilir.</span></div>' +
@@ -814,18 +831,60 @@
     var st = S.state; if (!st || !st.game) return;
     if (S.stowed) { S.stowed = false; render(); return; }
     if (S.picked !== i) { S.picked = i; render(); return; }
-    var g = st.game, c = myHand()[i];
-    if (!c) return;
-    if (!isMyTurn()) return toast("Sıra sende değil.");
-    if (!canPlay(c, g.top, g.chosenColor, g.stackKind)) return toast("Bu kart oynanamaz.");
-    if (NEEDS_COLOR[c.type]) { S.pick = { i: i, card: c, color: null, target: null, assign: {} }; render(); return; }
-    S.picked = null;
-    socket.emit("play", { cardIndex: i });
+    tryPlay(i);
   }
+  // Kartı atmayı dener; renk gereken kartta seçim ekranını açar. Atıldıysa ya da ekran açıldıysa true
+  function tryPlay(i) {
+    var st = S.state; if (!st || !st.game) return false;
+    var g = st.game, c = myHand()[i];
+    if (!c) return false;
+    if (!isMyTurn()) { toast("Sıra sende değil."); return false; }
+    if (!canPlay(c, g.top, g.chosenColor, g.stackKind)) { toast("Bu kart oynanamaz."); return false; }
+    S.picked = null;
+    if (NEEDS_COLOR[c.type]) { S.pick = { i: i, card: c, color: null, target: null, assign: {} }; render(); return true; }
+    socket.emit("play", { cardIndex: i });
+    return true;
+  }
+
+  // Kartı yukarı, masaya doğru sürükleyip bırakınca atılır
+  var drag = null, dragEndAt = 0;
+  function dragBack(el) {
+    el.classList.remove("dragging");
+    el.style.transition = "transform .2s ease";
+    el.style.transform = "";
+    setTimeout(function () { el.style.transition = ""; }, 220);
+  }
+  document.addEventListener("pointerdown", function (e) {
+    var el = e.target.closest(".hand .ucard[data-card]");
+    if (!el || S.stowed || S.pick) { drag = null; return; }
+    drag = { el: el, i: +el.getAttribute("data-card"), x: e.clientX, y: e.clientY, on: false, id: e.pointerId };
+  });
+  document.addEventListener("pointermove", function (e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.on) {
+      if (dy < -14 && Math.abs(dy) > Math.abs(dx)) { drag.on = true; drag.el.classList.add("dragging"); }
+      else return;
+    }
+    drag.el.style.transform = "translate(" + dx + "px," + dy + "px) scale(1.08)";
+  });
+  function dragEnd(e, cancel) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var d = drag; drag = null;
+    if (!d.on) return;
+    dragEndAt = Date.now();
+    var wrap = $(".hand-wrap"), top = wrap ? wrap.getBoundingClientRect().top : 0;
+    var c = myHand()[d.i], ok = false;
+    if (!cancel && (e.clientY < top - 10 || e.clientY - d.y < -110)) ok = tryPlay(d.i);
+    if (ok && c && !NEEDS_COLOR[c.type] && d.el.isConnected) d.el.style.opacity = "0";
+    else if (d.el.isConnected) dragBack(d.el);
+  }
+  document.addEventListener("pointerup", function (e) { dragEnd(e, false); });
+  document.addEventListener("pointercancel", function (e) { dragEnd(e, true); });
 
   document.addEventListener("click", function (e) {
     var card = e.target.closest("[data-card]");
-    if (card) return tapCard(+card.getAttribute("data-card"));
+    if (card) { if (Date.now() - dragEndAt < 400) return; return tapCard(+card.getAttribute("data-card")); }
     var el = e.target.closest("[data-act]");
     if (!el || el.disabled) return;
     var fn = ACTIONS[el.getAttribute("data-act")];

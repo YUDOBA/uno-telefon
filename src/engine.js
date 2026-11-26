@@ -87,7 +87,7 @@ function startRound(room) {
   room.gameOver = false;
   room.game = {
     deck, discard: [first], hands,
-    currentId: room.seats[0], direction: 1, chosenColor: first.color,
+    currentId: room.seats[((room.roundNow || 1) - 1) % room.seats.length], direction: 1, chosenColor: first.color,
     saidUno: {}, winnerId: null, plusStack: 0, stackKind: null,
     drawQueue: [], afterDrawTo: null, pendingDrawn: null,
     notice: "Tur " + room.roundNow + "/" + room.roundsTotal + " başladı. Üstte: " + R.cardLabel(first),
