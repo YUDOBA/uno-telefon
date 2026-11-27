@@ -41,3 +41,19 @@ Sunucu yeni sürüme geçince açık uygulamalar kendini yeniler.
 
 Render ücretsiz planında sunucu 15 dakika boşta kalınca uyur. UptimeRobot gibi bir servisle
 `https://uno-telefon.onrender.com/health` adresine 10 dakikada bir istek atılırsa sunucu uyumaz.
+
+## Uygulama (App Store / Google Play) için hazırlık
+
+Uygulamada ekranlar telefonun içinden açılır, yalnızca oyun bağlantısı sunucuya gider.
+
+```
+npm run build:app -- --server https://SUNUCU-ADRESI
+```
+
+Bu komut `app/www` klasörünü hazırlar (Capacitor bu klasörü kullanır). Sunucu ayarları (ortam değişkenleri):
+
+- `MIN_APP_VERSION`: kabul edilen en eski uygulama sürümü (varsayılan V98); daha eskisi "Yeni sürüm gerekli" ekranını görür.
+- `DAPAI_IOS_URL`, `DAPAI_ANDROID_URL`: güncelleme ekranındaki mağaza bağlantıları.
+- `EXTRA_ORIGINS`: bağlanmasına izin verilen ek adresler (virgülle).
+
+Lobideki **Davet et** düğmesi `ADRES/?oda=KOD` bağlantısını paylaşır; bağlantıyı açan kişi kod hazır şekilde katılma ekranına gelir.

@@ -10,7 +10,7 @@ const R = require("./src/rules");
 const E = require("./src/engine");
 const B = require("./src/bots");
 
-const VERSION = "V97";
+const VERSION = "V98";
 const PORT = process.env.PORT || 3000;
 const STORE = path.join(__dirname, "rooms-v85.json");
 const EMPTY_CLOSE_MS = 45000;
@@ -18,16 +18,20 @@ const BOT_DELAY_MS = process.env.YD_FAST_BOTS ? [60, 120] : [2000, 3000]; // tes
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { pingInterval: 10000, pingTimeout: 30000 });
+// Uygulama (Capacitor) ekranları telefonun içinden gelir; bu adreslerden bağlantıya izin verilir
+const APP_ORIGINS = ["capacitor://localhost", "ionic://localhost", "http://localhost", "https://localhost"]
+  .concat((process.env.EXTRA_ORIGINS || "").split(",").map((x) => x.trim()).filter(Boolean));
+const io = new Server(server, {
+  pingInterval: 10000, pingTimeout: 30000,
+  cors: { origin: (origin, cb) => cb(null, !origin || APP_ORIGINS.includes(origin) || /^https?:\/\/localhost(:\d+)?$/.test(origin)) }
+});
+// Uygulamanın kabul edilen en eski sürümü; daha eskisi "Güncelleme gerekli" ekranı görür
+const MIN_APP_VERSION = process.env.MIN_APP_VERSION || "V98";
+const STORE_LINKS = { ios: process.env.DAPAI_IOS_URL || "", android: process.env.DAPAI_ANDROID_URL || "" };
+const vnum = (v) => parseInt(String(v || "").replace(/\D/g, ""), 10) || 0;
 
 // Oyun motoru tarayıcıya da verilir (uygulamalı eğitim telefonda, sunucusuz çalışır)
-const ENGINE_JS = (() => {
-  const rd = (f) => fs.readFileSync(path.join(__dirname, "src", f + ".js"), "utf8");
-  const mods = ["rules", "engine"].map((n) =>
-    "(function () { var module = { exports: {} }, exports = module.exports, require = req;\n" + rd(n) + "\nM[" + JSON.stringify(n) + "] = module.exports; })();");
-  return "(function () { var M = {}; function req(n) { return M[String(n).replace('./', '')]; }\n" + mods.join("\n") +
-    "\nwindow.DapaiEngine = { R: M.rules, E: M.engine }; })();";
-})();
+const ENGINE_JS = require("./src/engine-bundle").engineBundle();
 app.get("/engine.js", (req, res) => { res.type("application/javascript"); res.setHeader("Cache-Control", "no-cache"); res.send(ENGINE_JS); });
 
 app.use(express.static(path.join(__dirname, "public"), {
@@ -269,6 +273,11 @@ function attach(socket, room, player) {
 }
 
 io.on("connection", (socket) => {
+  const hq = socket.handshake.query || {};
+  if (hq.app === "1" && vnum(hq.v) < vnum(MIN_APP_VERSION)) {
+    socket.emit("mustUpdate", { min: MIN_APP_VERSION, ios: STORE_LINKS.ios, android: STORE_LINKS.android });
+    return;
+  }
   const ctx = () => {
     const room = rooms.get(socket.data.roomCode);
     if (!room) return {};

@@ -1,9 +1,17 @@
 {
   "name": "dapai",
-  "version": "97.0.0",
+  "version": "98.0.0",
   "description": "Dapai - telefonlardan kodla katılınan çok oyunculu kart oyunu",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
-  "engines": { "node": ">=18" },
-  "dependencies": { "express": "^4.21.2", "socket.io": "^4.8.1" }
+  "scripts": {
+    "start": "node server.js",
+    "build:app": "node scripts/build-app.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
 }

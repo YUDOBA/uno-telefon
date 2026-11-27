@@ -411,3 +411,10 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .overlay.peek .body { justify-content: center; }
 .peek-ic { width: 40px; height: 40px; display: inline-flex; color: #F5C400; } .peek-ic svg { width: 100%; height: 100%; }
 .peek-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0 12px; }
+
+/* ---------- Davet ve güncelleme (V98) ---------- */
+.btn-invite { margin-top: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #F5C400; color: #161B2E; border: 0; font-weight: 900; width: 100%; }
+.btn-invite svg { width: 20px; height: 20px; }
+.update-page { text-align: center; justify-content: center; }
+.update-page .lg { width: 220px; max-width: 70%; margin: 0 auto 20px; display: block; }
+.update-page .btn { display: inline-block; margin-top: 14px; text-decoration: none; }

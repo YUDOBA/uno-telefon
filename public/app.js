@@ -1,7 +1,7 @@
 /* Dapai istemcisi — tek dosya */
 (function () {
   "use strict";
-  var CLIENT_V = "V97";
+  var CLIENT_V = "V98";
 
   // ---------- Yardımcılar ----------
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -59,6 +59,7 @@
     again: SV('<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/>'),
     back: '<svg viewBox="0 0 48 48"><path d="M30 8L14 24l16 16" fill="none" stroke="#111" stroke-width="6" stroke-linecap="square"/></svg>',
     dir: SV('<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/>', 3),
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7.5 7.5L12 3l4.5 4.5"/><path d="M5 12v6.5A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V12"/></svg>',
     hash: '<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"><path d="M19 8l-4 32M33 8l-4 32M9 18h32M7 30h32"/></svg>',
     help: '<svg viewBox="0 0 48 48" fill="none" stroke="#111" stroke-width="4.5" stroke-linecap="round"><path d="M16 17c0-6 4-9 8.5-9S33 11 33 16c0 6-8.5 7-8.5 13"/><circle cx="24.5" cy="38" r="1.5" fill="#111"/></svg>',
     cards: '<svg viewBox="0 0 48 48"><rect x="7" y="12" width="18" height="26" rx="3" fill="#fff" transform="rotate(-16 16 25)"/><rect x="15" y="9" width="18" height="27" rx="3" fill="#e6f5e6"/><rect x="23" y="12" width="18" height="26" rx="3" fill="#fff" transform="rotate(14 32 25)"/></svg>',
@@ -135,7 +136,11 @@
 
   // ---------- Bağlantı ----------
   // Gerçek bağlantı; uygulamalı eğitim açıkken oyun olayları telefondaki alıştırmaya gider
-  var io_ = io({ reconnectionDelay: 700, reconnectionDelayMax: 3000 });
+  // Uygulamada (App Store / Google Play) config.js sunucu adresini verir; tarayıcıda aynı adres kullanılır
+  var CFG = window.DAPAI_CFG || {};
+  var IS_APP = !!CFG.app;
+  var IO_OPTS = { reconnectionDelay: 700, reconnectionDelayMax: 3000, query: { v: CLIENT_V, app: IS_APP ? "1" : "0" } };
+  var io_ = CFG.server ? io(CFG.server, IO_OPTS) : io(IO_OPTS);
   var H = {};
   var T = null; // uygulamalı eğitim durumu
   var socket = {
@@ -150,6 +155,13 @@
     bootReady();
     var code = LS.get("yd_code", ""), token = LS.get("yd_token", "");
     if (code && token) socket.emit("join", { code: code, token: token, name: S.me.name, silent: true });
+  });
+  // Çok eski uygulama sürümü: mağazadan güncelleme iste
+  socket.on("mustUpdate", function (d) {
+    S.mustUpdate = d || {};
+    try { io_.disconnect(); } catch (e) {}
+    bootReady();
+    render();
   });
   socket.on("session", function (d) {
     S.me.id = d.playerId; S.me.token = d.token;
@@ -217,7 +229,7 @@
 
   // Sunucu yeni sürüme geçtiyse uygulama kendini yeniler
   function checkVersion(v) {
-    if (!v || v === CLIENT_V) return;
+    if (!v || v === CLIENT_V || IS_APP) return; // uygulama kendini yenilemez; gerekirse sunucu "güncelle" der
     var last = parseInt(SS.get("yd_reload_at") || "0", 10);
     if (Date.now() - last < 60000) return;
     SS.set("yd_reload_at", String(Date.now()));
@@ -309,11 +321,11 @@
   function bootReady() {
     if (booted) return;
     booted = true;
-    var wait = fromBoot ? 0 : Math.max(0, 5000 - (Date.now() - (window.__bootT0 || Date.now())));
+    var wait = fromBoot ? 0 : Math.max(0, (IS_APP ? 1200 : 5000) - (Date.now() - (window.__bootT0 || Date.now()))); // uygulamada telefonun kendi açılış ekranı zaten var
     setTimeout(function () {
       var b = document.getElementById("boot");
       if (b) b.remove();
-      if (!fromBoot) splash();
+      if (!fromBoot && !S.mustUpdate) splash();
     }, wait);
   }
   setTimeout(function () { var s = document.getElementById("bootSub"); if (s && !everConnected) s.textContent = "Sunucu uyanıyor, biraz sürebilir…"; }, 8000);
@@ -327,6 +339,7 @@
 
   function render() {
     var fn = { home: home, create: create, join: join, how: how, rules: rules, cards: cards, lobby: lobby, game: game }[S.screen] || home;
+    if (S.mustUpdate) fn = updateScreen;
     var focus = document.activeElement && document.activeElement.id;
     var keep = {};
     ["name", "code", "chatIn"].forEach(function (id) { var el = document.getElementById(id); if (el) keep[id] = el.value; });
@@ -375,10 +388,47 @@
       '<button class="btn btn-main" data-act="create">Kur ve kod al</button></div></div>';
   }
 
+  // ---------- Davet bağlantısı ----------
+  function inviteUrl(code) { return (CFG.inviteBase || location.origin) + "/?oda=" + encodeURIComponent(code); }
+  function invite() {
+    var st = S.state; if (!st) return;
+    var url = inviteUrl(st.code), text = "Dapai'de masa kurdum, gel oynayalım! Oda kodu: " + st.code;
+    var copy = function () {
+      var done = function () { toast("Davet bağlantısı kopyalandı."); };
+      try { navigator.clipboard.writeText(text + "\n" + url).then(done, function () { toast(url); }); } catch (e) { toast(url); }
+    };
+    try {
+      var cap = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+      if (cap) { cap.share({ title: "Dapai", text: text, url: url, dialogTitle: "Davet et" }).catch(function () {}); return; }
+      if (navigator.share) { navigator.share({ title: "Dapai", text: text, url: url }).catch(function (e) { if (e && e.name !== "AbortError") copy(); }); return; }
+    } catch (e) {}
+    copy();
+  }
+  // Davet bağlantısıyla açılınca kod hazır gelir
+  function takeInvite(href) {
+    var m = /[?&#]oda=(\d{4})/.exec(href || ""); if (!m) return false;
+    var code = m[1];
+    if (S.state && S.state.code === code) return true;
+    LS.set("yd_last_code", code);
+    S.inviteCode = code;
+    if (!S.state || S.screen === "home" || S.screen === "join") { S.screen = "join"; render(); var n = $("#name"); if (n && !n.value) n.focus(); }
+    return true;
+  }
+  function platform() {
+    try { if (window.Capacitor && window.Capacitor.getPlatform) return window.Capacitor.getPlatform(); } catch (e) {}
+    return /android/i.test(navigator.userAgent) ? "android" : "ios";
+  }
+  function updateScreen() {
+    var d = S.mustUpdate, url = d[platform()] || "";
+    return '<div class="page update-page"><img class="lg" src="/dapai-logo.svg" alt="Dapai"><h1>Yeni sürüm gerekli</h1>' +
+      '<p class="sub">Dapai güncellendi. Oynamaya devam etmek için uygulamayı ' + (platform() === "android" ? "Google Play" : "App Store") + "'dan güncelle.</p>" +
+      (url ? '<a class="btn btn-main" href="' + esc(url) + '" target="_blank" rel="noopener">Şimdi güncelle</a>' : "<p class=\"sub\"><b>Mağazada Dapai'yi arayıp güncelle.</b></p>") +
+      "</div>";
+  }
   function join() {
     return backBtn() + '<div class="page"><h1>Kodla oyuna katıl</h1><div class="panel">' +
       '<label for="name">Adın</label><input id="name" maxlength="16" autocomplete="off" value="' + esc(S.me.name) + '">' +
-      '<label for="code">Oyun kodu</label><input id="code" class="big" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="' + esc(LS.get("yd_last_code", "")) + '">' +
+      '<label for="code">Oyun kodu</label><input id="code" class="big" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="' + esc(S.inviteCode || LS.get("yd_last_code", "")) + '">' +
       '<button class="btn btn-main" data-act="join">Katıl</button>' +
       '<p class="sub" style="margin-top:12px">Koptuysan aynı adla tekrar katıl, kendi yerine dönersin.</p></div></div>';
   }
@@ -389,7 +439,8 @@
     var isHost = st.hostId === S.me.id, held = st.held;
     var h = '<div class="page lobby"><h1>' + (held ? "Oyun duraklatıldı" : "Lobi") + "</h1>";
     h += '<div class="panel code-box"><div class="code">' + esc(st.code) + '</div><p class="sub" style="margin:4px 0 0">Bu kodu arkadaşlarına söyle · ' +
-      st.players.length + " / " + st.maxPlayers + " oyuncu</p></div>";
+      st.players.length + " / " + st.maxPlayers + " oyuncu</p>" +
+      '<button class="btn btn-invite" data-act="invite">' + IC.share + "Davet et</button></div>";
     h += '<div class="panel players"><label>Masa sırası (ilk turu 1. sıradaki başlar, sonra sırayla)</label>';
     st.seats.forEach(function (id, i) {
       var p = player(id); if (!p) return;
@@ -1100,6 +1151,7 @@
     },
     pickTarget: function (id) { S.pick.target = id; render(); },
     pickGift: function (i) { S.pick.gift = +i; render(); },
+    invite: function () { invite(); },
     peekClose: function () { S.peek = null; render(); },
     assign: function (arg) {
       var a = arg.split(","), id = a[0], as = S.pick.assign, sum = 0;
@@ -1254,7 +1306,13 @@
   document.addEventListener("visibilitychange", function () { if (!document.hidden) holdScreen(); });
   document.addEventListener("pointerdown", holdScreen, true);
 
-  if ("serviceWorker" in navigator) { try { navigator.serviceWorker.register("/sw.js"); } catch (e) {} }
+  if (!IS_APP && "serviceWorker" in navigator) { try { navigator.serviceWorker.register("/sw.js"); } catch (e) {} }
 
   render();
+  if (takeInvite(location.href)) { try { history.replaceState(null, "", location.pathname + (location.search.indexOf("live=1") >= 0 ? "?live=1" : "")); } catch (e) {} }
+  // Uygulamada davet bağlantısı açılınca (Capacitor App eklentisi)
+  try {
+    var capApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (capApp) capApp.addListener("appUrlOpen", function (e) { takeInvite(e && e.url); });
+  } catch (e) {}
 })();
