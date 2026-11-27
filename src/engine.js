@@ -336,7 +336,7 @@ function sayUno(room, pid, fx) {
   if (isPenalty(g) && actorOf(g) === pid) return "Ceza varken Dapai denilemez.";
   if (g.saidUno[pid]) return null;
   g.saidUno[pid] = true;
-  fx.events.push(["unoShout", { playerId: pid, name: nameOf(room, pid) }]);
+  fx.events.push(["dapaiShout", { playerId: pid, name: nameOf(room, pid) }]);
   return null;
 }
 

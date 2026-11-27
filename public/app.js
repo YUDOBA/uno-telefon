@@ -1,7 +1,7 @@
 /* Dapai istemcisi — tek dosya */
 (function () {
   "use strict";
-  var CLIENT_V = "V93";
+  var CLIENT_V = "V94";
 
   // ---------- Yardımcılar ----------
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -116,7 +116,15 @@
   }
 
   // ---------- Bağlantı ----------
-  var socket = io({ reconnectionDelay: 700, reconnectionDelayMax: 3000 });
+  // Gerçek bağlantı; uygulamalı eğitim açıkken oyun olayları telefondaki alıştırmaya gider
+  var io_ = io({ reconnectionDelay: 700, reconnectionDelayMax: 3000 });
+  var H = {};
+  var T = null; // uygulamalı eğitim durumu
+  var socket = {
+    on: function (ev, fn) { H[ev] = fn; io_.on(ev, function (d) { if (T && TUT_BLOCK[ev]) return; fn(d); }); },
+    emit: function (ev, d) { if (T && tutTake(ev, d)) return; io_.emit(ev, d); }
+  };
+  var TUT_BLOCK = { session: 1, state: 1, cardFly: 1, cardDraw: 1, dapaiShout: 1, roomLost: 1, roomClosed: 1, errorMsg: 1 };
   var everConnected = false;
 
   socket.on("connect", function () {
@@ -163,7 +171,7 @@
     addFx({ kind: "play", pid: d.fromId, card: d.card, dur: 1600 });
   });
   socket.on("cardDraw", function (d) { addFx({ kind: "draw", pid: d && d.toId, dur: 800 }); });
-  socket.on("unoShout", function (d) {
+  socket.on("dapaiShout", function (d) {
     S.burst = { pid: d.playerId, name: d.name, start: Date.now() };
     if (d.playerId !== S.me.id) { try { if (navigator.vibrate) navigator.vibrate([400, 120, 400, 120, 400]); } catch (e) {} }
     render();
@@ -298,6 +306,10 @@
     app.innerHTML = fn() + verTag() + (branded ? brand() : "");
     Object.keys(keep).forEach(function (id) { var el = document.getElementById(id); if (el && keep[id] != null) el.value = keep[id]; });
     if (focus) { var f = document.getElementById(focus); if (f) f.focus(); }
+    if (T && S.screen === "game") {
+      if (!$(".coach")) { var pg = $(".page"); if (pg) pg.insertAdjacentHTML("afterbegin", coachHtml()); }
+      tutDecorate();
+    }
     if (S.screen === "game") { layoutHand(); paintFx(); paintClock(); }
     var box = $(".chat-box"); if (box) box.scrollTop = box.scrollHeight;
   }
@@ -306,6 +318,7 @@
     return '<div class="page home">' +
       '<div class="hero"><img src="/dapai-logo.svg" alt="Dapai"></div>' +
       '<button class="btn btn-main" data-act="go" data-arg="create">Oyun kur</button>' +
+      '<button class="btn btn-tut" data-act="tut">Nasıl oynanır?' + (LS.get("yd_tut_done", "") ? "" : '<span class="new">YENİ</span>') + "<small>2 botla uygulamalı alıştırma</small></button>" +
       '<div class="tiles">' +
       '<button class="tile t-red" data-act="go" data-arg="join">' + IC.hash + "<span>Kodla oyuna<br>katıl</span></button>" +
       '<button class="tile t-yellow" data-act="go" data-arg="how">' + IC.help + "<span>Nasıl<br>kullanılır</span></button>" +
@@ -348,7 +361,7 @@
     var h = '<div class="page lobby"><h1>' + (held ? "Oyun duraklatıldı" : "Lobi") + "</h1>";
     h += '<div class="panel code-box"><div class="code">' + esc(st.code) + '</div><p class="sub" style="margin:4px 0 0">Bu kodu arkadaşlarına söyle · ' +
       st.players.length + " / " + st.maxPlayers + " oyuncu</p></div>";
-    h += '<div class="panel players"><label>Masa sırası (ilk sıradaki başlar)</label>';
+    h += '<div class="panel players"><label>Masa sırası (ilk turu 1. sıradaki başlar, sonra sırayla)</label>';
     st.seats.forEach(function (id, i) {
       var p = player(id); if (!p) return;
       var tags = [];
@@ -411,15 +424,16 @@
     var note = st.paused ? "Sıradaki oyuncu koptu. Aynı adla dönmesi bekleniyor." : (g.noticeYou || g.notice);
 
     var h = '<div class="page game">';
-    h += '<div class="topbar"><img class="tb-logo" src="/dapai-logo.svg" alt="Dapai"><strong>Oda ' + esc(st.code) + "</strong>" + (st.turnSeconds ? '<span class="clock" id="clock">' + st.turnSeconds + "</span>" : "") +
-      '<span class="sp"></span><span class="badge">Tur ' + st.roundNow + "/" + st.roundsTotal + "</span></div>";
-    h += '<div class="notice' + (g.noticeYou ? " me" : "") + '">' + esc(note) + "</div>";
+    h += '<div class="topbar"><img class="tb-logo" src="/dapai-logo.svg" alt="Dapai"><strong>' + (T ? "Alıştırma" : "Oda " + esc(st.code)) + "</strong>" + (st.turnSeconds ? '<span class="clock" id="clock">' + st.turnSeconds + "</span>" : "") +
+      '<span class="sp"></span>' + (T ? "" : '<span class="badge">Tur ' + st.roundNow + "/" + st.roundsTotal + "</span>") + "</div>";
+    if (T) h += coachHtml();
+    else h += '<div class="notice' + (g.noticeYou ? " me" : "") + '">' + esc(note) + "</div>";
 
     var ydOn = myHand().length === 2 && !meP.saidUno && !(pen && mine);
     var passOn = mine && g.drewOnce && !pen;
     var drawOn = mine && (pen || !g.drewOnce);
     h += '<div class="hud"><div class="hud-left">' +
-      '<button class="hbtn yd" data-act="uno" aria-label="Dapai"' + (ydOn ? "" : " disabled") + ">" + IC.yd + "</button>" +
+      '<button class="hbtn yd" data-act="dapai" aria-label="Dapai"' + (ydOn ? "" : " disabled") + ">" + IC.yd + "</button>" +
       '<button class="hbtn" data-act="pass"' + (passOn ? "" : " disabled") + ">Pas</button>" +
       '<button class="hbtn sm" data-act="view" data-arg="scores">Skor</button>' +
       '<button class="hbtn sm' + (unread ? " unread" : "") + '" data-act="view" data-arg="chat">Mesaj</button></div>';
@@ -624,7 +638,7 @@
 
   function how() {
     var sh = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M5 12v8h14v-8"/></svg>';
-    var h = "";
+    var h = '<button class="btn btn-tut" data-act="tut">Uygulamalı alıştırmayı başlat<small>2 botla, adım adım</small></button>';
     h += RS(1, "Oyun kur",
       '<div class="flow"><div class="mock"><div class="mf">Adın <span class="mv">Fatih</span></div>' +
       '<div class="mseg"><i>2</i><i>3</i><i class="on">4</i><i>5</i><i>6</i></div><div class="mf">Süre <span class="mv">30 sn</span></div></div>' +
@@ -638,7 +652,7 @@
       '<div class="mock wide"><div class="srow"><span>1. Fatih <small>(kurucu)</small></span><span class="arw">▲▼</span></div>' +
       '<div class="srow"><span>2. Ali</span><span class="arw">▲▼</span></div><div class="srow bot"><span>3. Bot 1</span><span class="arw">boş koltuk</span></div>' +
       '<div class="flow" style="margin-top:6px"><span class="pill">Tur 3</span><span class="pill">Süresiz</span><span class="pill">Bot: Orta</span></div></div>' +
-      '<p class="sub">Kurucu ▲▼ ile masa sırasını, tur sayısını, süreyi ve bot zorluğunu ayarlar, sonra <b>Oyunu başlat</b> der.</p>');
+      '<p class="sub">Kurucu ▲▼ ile masa sırasını, tur sayısını, süreyi ve bot zorluğunu ayarlar, sonra <b>Oyunu başlat</b> der. Her yeni turu masadaki bir sonraki oyuncu başlatır.</p>');
     h += RS(4, "Kart atmak",
       '<div class="steps"><div><span class="frame">' + mini(N("red", 7)) + '</span><span class="cap">Sarı çerçeve: atılabilir</span></div>' + arrow() +
       '<div><span class="lift">' + mini(N("red", 7)) + '</span><span class="cap">1. dokunuş: kart kalkar</span></div>' + arrow() +
@@ -655,7 +669,7 @@
     h += RS(7, "Dapai!",
       '<div class="flow">' + mini(N("green", 3)) + mini(N("yellow", 9)) + '<span class="cap">2 kart kaldı</span>' + arrow() + '<span class="ydb">' + IC.yd + '</span>' + arrow() +
       '<span class="seatmini"><b>Fatih</b><i>DAPAI!</i></span></div>' +
-      '<p class="sub">2 kartın kalınca butona bas; adının altında DAPAI! yazar, diğer telefonlar titrer. <b>Basmadan tek karta düşersen 2 ceza kartı</b> çekersin.</p>');
+      '<p class="sub">2 kartın kalınca Dapai kartı sarı çerçeveyle yanıp söner, ona bas; adının altında DAPAI! yazar, diğer telefonlar titrer. <b>Basmadan tek karta düşersen 2 ceza kartı</b> çekersin.</p>');
     h += RS(8, "Skor ve mesaj",
       '<div class="flow"><span class="hb">Skor</span><span class="hb">Mesaj</span>' + arrow() + '<span class="hb new">Mesaj</span><span class="cap">yeni mesaj var</span></div>' +
       '<p class="sub">Skor ve Mesaj oyundan çıkarmaz; <b>Oyuna dön</b> ile geri gelirsin. Sıra sana gelince üstte "SIRA SENDE" yazar.</p>');
@@ -751,6 +765,204 @@
   }
   setInterval(paintClock, 250);
 
+  // ---------- Uygulamalı eğitim (Nasıl oynanır) ----------
+  // Gerçek oyun motoru telefonda çalışır; kartlar önceden dizilidir, botlar senaryoya göre oynar.
+  function tn(color, v) { return { color: color, type: "number", value: v }; }
+  function tk(color, t) { return { color: color, type: t, value: t }; }
+  function same(a, b) { return a && b && a.color === b.color && a.type === b.type && String(a.value) === String(b.value); }
+  var TK = {
+    r7: tn("red", 7), joker: tk("black", "wild"), b2: tk("blue", "draw2"), b1: tn("blue", 1)
+  };
+  var TUT_STEPS = [
+    { say: "Dapai'ye hoş geldin! Ece ve Can adlı iki botla kısa bir el oynayacağız. Her adımda ne yapacağını burada yazacağım.", next: true },
+    { say: "Alttakiler senin kartların. Amaç, elindeki kartları herkesten önce bitirmek.", hl: ".hand", next: true },
+    { say: "Ortadaki kart Kırmızı 5. Üstüne aynı renk ya da aynı sayı atılır. Elinde uyan kart yok.", hl: ".felt .ucard", next: true },
+    { say: "Uyan kartın yoksa yanıp sönen desteye dokun ve 1 kart çek.", hl: ".pile button", want: "draw", hint: "Yanıp sönen desteye dokun." },
+    { say: "Yeni gelen kart YENİ yazısıyla görünür. Kırmızı 7 uyuyor! Kartı masaya doğru yukarı kaydır ya da iki kez dokun. (Uymasaydı Pas'a basardın.)", want: "play", card: TK.r7, hint: "Kırmızı 7'yi at." },
+    { say: "Can, Hedef +2 ile seni seçti! Ceza varken kart atılmaz. Yanıp sönen \"Ceza çek\" destesine dokun.", hl: ".pile button", want: "draw", hint: "Önce cezayı çek: desteye dokun." },
+    { say: "Cezayı çektin; ceza çeken sonra kendisi oynar. Renk Yeşil ve elinde yeşil yok. Ama Joker her zaman atılır: Jokeri at, Mavi'yi seç.", want: "play", card: TK.joker, color: "blue", hint: "Jokeri at." },
+    { say: "Can +2 attı. Elinde +2 varsa üstüne atabilirsin; ceza büyür ve sıradakine geçer. Mavi +2'ni at!", want: "play", card: TK.b2, hint: "Mavi +2'yi at, cezayı Ece'ye geçir." },
+    { say: "Ece 4 kart çekti! Üstte Sarı 6 var. Sarı kartlarından birini at.", want: "play", colorOf: "yellow", hint: "Sarı bir kart at." },
+    { say: "2 kartın kaldı! Son karttan önce Dapai demelisin: yanıp sönen Dapai kartına bas. Demezsen 2 ceza kartı çekersin.", hl: ".hbtn.yd", want: "dapai", hint: "Önce Dapai kartına bas." },
+    { say: "Harika! Şimdi sarı kartını at.", want: "play", colorOf: "yellow", hint: "Sarı kartını at." },
+    { say: "Son kartın Mavi 1, üstte Yeşil 1: aynı sayı! At ve turu bitir.", want: "play", card: TK.b1, hint: "Mavi 1'i at." },
+    { say: "Turu kazandın! Skor tabelasına bak.", hl: "[data-act=seeScores]", want: "seeScores" },
+    { say: "Tabloda herkesin elinde kalan kart sayısı ve puanı var. Az puan iyidir, turu bitiren 20 puan kazanır. Aşağıda kimin elinde hangi kartın kaldığı görünür.", hl: ".score-table", next: true },
+    { say: "Alıştırma bitti! Gerçek oyunda \"Oyun kur\" ile oda açar, kodu arkadaşlarına verirsin. Diğer özel kartları da öğrenmek ister misin?", end: true }
+  ];
+  // Botların sırayla atacağı kartlar
+  function tutPlan() {
+    return {
+      ece: [tn("red", 3), tn("blue", 9), tn("blue", 6), tn("yellow", 2), tn("yellow", 1)],
+      can: [{ c: tk("black", "wtarget2"), color: "green", target: "me" }, tk("blue", "draw2"), tn("yellow", 6), tn("yellow", 5), tn("green", 1)]
+    };
+  }
+  function tutRoom() {
+    var filler = [];
+    ["red", "yellow", "green", "blue"].forEach(function (c) { for (var v = 2; v <= 9; v++) filler.push(tn(c, v)); });
+    // Desteden çekilecekler (sondan başa): Kırmızı 7, ceza: Joker + Sarı 4, Ece'nin 4 cezası
+    var deck = filler.concat([tn("yellow", 9), tn("blue", 7), tn("red", 8), tn("green", 2), tn("yellow", 4), tk("black", "wild"), tn("red", 7)]);
+    var me = { id: "me", name: S.me.name || "Sen", connected: true, isBot: false };
+    return {
+      code: "Alıştırma", hostId: "-", status: "playing", roundNow: 1, roundsTotal: 1, roundId: 1, moveSeq: 1,
+      players: [me, { id: "ece", name: "Ece", connected: true, isBot: true }, { id: "can", name: "Can", connected: true, isBot: true }],
+      seats: ["me", "ece", "can"], scores: {}, timeScores: {}, readyNext: {}, sawScores: {}, chat: [],
+      game: {
+        deck: deck, discard: [tn("red", 5)],
+        hands: {
+          me: [tk("blue", "draw2"), tn("blue", 1), tn("yellow", 8)],
+          ece: [tn("red", 3), tn("blue", 9), tn("blue", 6), tn("yellow", 2), tn("yellow", 1), tn("green", 5)],
+          can: [tk("black", "wtarget2"), tk("blue", "draw2"), tn("yellow", 6), tn("yellow", 5), tn("green", 1), tn("red", 9)]
+        },
+        currentId: "me", direction: 1, chosenColor: "red", saidUno: {}, winnerId: null, plusStack: 0, stackKind: null,
+        drawQueue: [], afterDrawTo: null, pendingDrawn: null, notice: "", noticeYou: {}
+      }
+    };
+  }
+  function tutView() {
+    var EN = window.DapaiEngine.E, room = T.room, g = room.game;
+    var actor = EN.actorOf(g), penal = EN.isPenalty(g), top = g.discard[g.discard.length - 1];
+    if (actor !== room._fa) { room._ft = (room._ft || 0) + 1; room._fa = actor; }
+    Object.keys(g.hands).forEach(function (id) { g.hands[id].forEach(function (c) { if (c.fresh === true) c.fresh = room._ft; }); });
+    var plain = function (c) { return { color: c.color, type: c.type, value: c.value }; };
+    var left = null;
+    if (room.status === "winnerShow") { left = {}; room.players.forEach(function (p) { left[p.id] = (g.hands[p.id] || []).map(plain); }); }
+    return {
+      v: CLIENT_V, code: room.code, hostId: room.hostId, maxPlayers: 3, status: room.status, held: false,
+      seats: room.seats, roundsTotal: 1, roundNow: 1, roundId: 1, turnSeconds: 0, botLevel: "mid", clockLeftMs: 0, paused: false,
+      lastRoundPts: room.lastRoundPts || {}, lastWinnerId: room.lastWinnerId || null, winBonus: WIN_BONUS,
+      gameOver: !!room.gameOver, readyNext: {}, sawScores: room.sawScores, chat: [], leftHands: left,
+      players: room.players.map(function (p) {
+        return { id: p.id, name: p.name, connected: true, isBot: p.isBot, cardCount: (g.hands[p.id] || []).length,
+          saidUno: !!g.saidUno[p.id], score: room.scores[p.id] || 0, timeScore: 0 };
+      }),
+      game: {
+        top: plain(top), chosenColor: g.chosenColor, direction: g.direction, actorId: actor,
+        notice: g.notice || "", noticeYou: (g.noticeYou && g.noticeYou.me) || "",
+        hand: g.hands.me.map(function (c) { return { color: c.color, type: c.type, value: c.value, fresh: !!c.fresh }; }),
+        deckCount: g.deck.length, plusStack: g.plusStack || 0, stackKind: penal ? g.stackKind : null, isPenalty: penal,
+        penaltyLeft: g.drawQueue.length ? g.drawQueue[0].left : (g.plusStack || 0),
+        drewOnce: !!(g.pendingDrawn && g.pendingDrawn.playerId === "me"), winnerId: g.winnerId
+      }
+    };
+  }
+  function tutFlush(fx) {
+    (fx && fx.events || []).forEach(function (e) { if (H[e[0]]) H[e[0]](e[1]); });
+    H.state(tutView());
+  }
+  function tutStep() { return T ? TUT_STEPS[T.i] : null; }
+  function tutStart() {
+    if (!window.DapaiEngine) {
+      var sc = document.createElement("script");
+      sc.src = "/engine.js?v=" + CLIENT_V.slice(1);
+      sc.onload = tutStart;
+      sc.onerror = function () { toast("Alıştırma yüklenemedi. Bağlantını kontrol et."); };
+      document.head.appendChild(sc);
+      return;
+    }
+    T = { i: 0, busy: false, room: null, plan: tutPlan(), savedId: S.me.id, timer: null };
+    T.room = tutRoom();
+    S.me.id = "me"; S.state = null; S.roundId = 0; S.view = "table"; S.endView = null; S.fx = [];
+    resetRoundUi();
+    S.screen = "game";
+    H.state(tutView());
+    holdScreen();
+  }
+  function tutStop(screen) {
+    if (!T) return;
+    if (T.timer) clearTimeout(T.timer);
+    S.me.id = T.savedId;
+    T = null;
+    LS.set("yd_tut_done", "1");
+    S.state = null; S.roundId = 0; S.view = "table"; S.endView = null; S.fx = []; resetRoundUi();
+    S.screen = screen || "home";
+    render();
+    // Açık bir oda varsa yeniden bağlan
+    var code = LS.get("yd_code", ""), token = LS.get("yd_token", "");
+    if (code && token) io_.emit("join", { code: code, token: token, name: S.me.name, silent: true });
+  }
+  // Seçilen kart bu adımda atılabilir mi
+  function tutCardOk(c) {
+    var st = tutStep();
+    if (!st || st.want !== "play") return false;
+    if (st.card) return same(c, st.card);
+    if (st.colorOf) return c.color === st.colorOf;
+    return true;
+  }
+  function tutHint() { var st = tutStep(); toast(st && st.hint ? st.hint : "Önce yukarıdaki yönergeyi izle.", true); }
+  // Alıştırmadayken oyun olaylarını yakalar
+  function tutTake(ev, d) {
+    var EN = window.DapaiEngine.E, room = T.room, st = tutStep(), fx = { events: [] }, err = null;
+    if (ev === "leave") { tutStop(); return true; }
+    if (ev === "sawScores") { room.sawScores.me = true; if (st && st.want === "seeScores") { T.i++; H.state(tutView()); } return true; }
+    if (ev === "readyNext" || ev === "again" || ev === "toLobby" || ev === "chat" || ev === "settings") { toast("Alıştırmada bu kullanılmaz.", true); return true; }
+    if (ev !== "play" && ev !== "draw" && ev !== "pass" && ev !== "dapai") return false;
+    if (T.busy || !st || st.want !== ev) { tutHint(); return true; }
+    var hand = room.game.hands.me;
+    // Önceki sıralardan kalan YENİ işaretleri silinir
+    if (EN.actorOf(room.game) === "me") hand.forEach(function (c) { if (c.fresh && c.fresh !== room._ft) delete c.fresh; });
+    if (ev === "play") {
+      var c = hand[d.cardIndex];
+      if (!c || !tutCardOk(c)) { tutHint(); return true; }
+      if (st.color && d.chosenColor !== st.color) { toast("Bu alıştırmada " + COLOR_TR[st.color] + " rengini seç.", true); return true; }
+      err = EN.play(room, "me", d, fx);
+    } else if (ev === "draw") err = EN.draw(room, "me", fx);
+    else if (ev === "dapai") err = EN.sayUno(room, "me", fx);
+    else err = EN.pass(room, "me");
+    if (err) { toast(err); return true; }
+    T.i++;
+    tutFlush(fx);
+    tutBots();
+    return true;
+  }
+  // Sıra botlardaysa senaryodaki hamleleri yapar
+  function tutBots() {
+    if (!T) return;
+    var EN = window.DapaiEngine.E, room = T.room, g = room.game;
+    var actor = room.status === "playing" ? EN.actorOf(g) : null;
+    if (!actor || actor === "me") { T.busy = false; render(); return; }
+    T.busy = true; render();
+    T.timer = setTimeout(function () {
+      if (!T) return;
+      var fx = { events: [] }, hand = g.hands[actor];
+      if (EN.isPenalty(g)) EN.draw(room, actor, fx);
+      else {
+        var spec = T.plan[actor].shift(), want = spec && (spec.c || spec);
+        var i = -1; hand.forEach(function (c, k) { if (i < 0 && same(c, want)) i = k; });
+        if (hand.length === 2 && !g.saidUno[actor]) EN.sayUno(room, actor, fx);
+        var err = i < 0 ? "yok" : EN.play(room, actor, { cardIndex: i, chosenColor: spec.color, targetId: spec.target }, fx);
+        if (err) { EN.draw(room, actor, fx); EN.pass(room, actor); }
+      }
+      tutFlush(fx);
+      tutBots();
+    }, 1400);
+  }
+  function coachHtml() {
+    var st = tutStep(); if (!st) return "";
+    var who = null;
+    if (T.busy && S.state && S.state.game) { var p = player(S.state.game.actorId); who = p ? p.name : null; }
+    var h = '<div class="coach' + (T.busy ? " wait" : "") + '"><div class="coach-tx">';
+    if (T.busy) h += "<b>" + esc(who || "Botlar") + "</b> oynuyor…" + (S.state && S.state.game && S.state.game.notice ? '<small>' + esc(S.state.game.notice) + "</small>" : "");
+    else h += esc(st.say);
+    h += "</div>";
+    if (!T.busy && st.next) h += '<button class="coach-btn" data-act="tutNext">Devam</button>';
+    if (!T.busy && st.end) h += '<div class="coach-end"><button class="coach-btn" data-act="tutEnd" data-arg="cards">Özel kartlar</button><button class="coach-btn" data-act="tutEnd" data-arg="rules">Kurallar</button><button class="coach-btn ghost" data-act="tutEnd" data-arg="home">Ana ekran</button></div>';
+    if (!st.end) h += '<button class="coach-x" data-act="tutEnd" data-arg="home" aria-label="Alıştırmadan çık">Çık</button>';
+    return h + "</div>";
+  }
+  // Ekranda vurgulanacak yer
+  function tutDecorate() {
+    var st = tutStep(); if (!st || T.busy) return;
+    var sel = st.hl;
+    if (!sel && st.want === "play" && S.state && S.state.game) {
+      var hand = myHand(), idx = -1;
+      hand.forEach(function (c, k) { if (idx < 0 && tutCardOk(c)) idx = k; });
+      if (st.colorOf) { Array.prototype.forEach.call(document.querySelectorAll(".hand .ucard[data-card]"), function (el) { var c = hand[+el.getAttribute("data-card")]; if (c && tutCardOk(c)) el.classList.add("tut-hl"); }); return; }
+      if (idx >= 0) sel = '.hand .ucard[data-card="' + idx + '"]';
+    }
+    if (sel) Array.prototype.forEach.call(document.querySelectorAll(sel), function (el) { el.classList.add("tut-hl"); });
+  }
+
   // ---------- Etkileşim ----------
   function go(screen) {
     S.from = S.screen;
@@ -811,11 +1023,12 @@
       socket.emit("leave"); leaveLocal();
     },
     exit: function () {
+      if (T) return tutStop();
       var st = S.state, host = st && st.hostId === S.me.id;
       if (host && !confirm("Oda herkes için kapanacak. Emin misin?")) return;
       socket.emit("leave"); leaveLocal();
     },
-    uno: function () { socket.emit("uno"); },
+    dapai: function () { socket.emit("dapai"); },
     pass: function () { S.picked = null; socket.emit("pass"); },
     draw: function () { S.picked = null; socket.emit("draw"); },
     view: function (v) { S.view = v; if (v === "chat") S.seenChat = (S.state.chat || []).length; render(); },
@@ -830,6 +1043,8 @@
     ready: function () { socket.emit("readyNext"); },
     again: function () { socket.emit("again"); },
     pickColor: function (k) {
+      var ts = tutStep();
+      if (ts && ts.color && k !== ts.color) return toast("Bu alıştırmada " + COLOR_TR[ts.color] + " rengini seç.", true);
       S.pick.color = k;
       var t = S.pick.card.type;
       if (t !== "wtarget2" && t !== "swap" && t !== "custom") return sendPick();
@@ -843,7 +1058,10 @@
       render();
     },
     pickCancel: function () { S.pick = null; S.dropFly = null; render(); },
-    pickOk: sendPick
+    pickOk: sendPick,
+    tut: function () { tutStart(); },
+    tutNext: function () { if (T) { T.i++; render(); } },
+    tutEnd: function (to) { tutStop(to === "home" ? "home" : to); }
   };
 
   function sendPick() {
@@ -868,6 +1086,7 @@
     if (!c) return false;
     if (!isMyTurn()) { toast("Sıra sende değil."); return false; }
     if (!canPlay(c, g.top, g.chosenColor, g.stackKind)) { toast("Bu kart oynanamaz."); return false; }
+    if (T && !tutCardOk(c)) { tutHint(); return false; }
     S.picked = null;
     if (NEEDS_COLOR[c.type]) { S.pick = { i: i, card: c, color: null, target: null, assign: {} }; render(); return true; }
     socket.emit("play", { cardIndex: i });

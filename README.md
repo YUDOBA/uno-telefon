@@ -4,7 +4,9 @@ Yudoba markasının çok oyunculu telefon kart oyunu.
 
 Telefonlardan 4 haneli kodla katılınan, 2–8 kişilik (boş koltuklar bot) kart oyunu. PWA olarak ana ekrana eklenebilir.
 
-Canlı: https://uno-telefon.onrender.com
+Canlı: https://uno-telefon.onrender.com (adres Dapai olarak değiştirilecek)
+
+Ana ekrandaki **Nasıl oynanır?** düğmesi, iki botla adım adım bir alıştırma eli açar. Alıştırma sunucuya bağlanmadan telefonda çalışır: oyun motoru `/engine.js` olarak tarayıcıya da verilir.
 
 ## Yapı
 

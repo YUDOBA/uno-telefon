@@ -10,7 +10,7 @@ const R = require("./src/rules");
 const E = require("./src/engine");
 const B = require("./src/bots");
 
-const VERSION = "V93";
+const VERSION = "V94";
 const PORT = process.env.PORT || 3000;
 const STORE = path.join(__dirname, "rooms-v85.json");
 const EMPTY_CLOSE_MS = 45000;
@@ -19,6 +19,16 @@ const BOT_DELAY_MS = process.env.YD_FAST_BOTS ? [60, 120] : [2000, 3000]; // tes
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { pingInterval: 10000, pingTimeout: 30000 });
+
+// Oyun motoru tarayıcıya da verilir (uygulamalı eğitim telefonda, sunucusuz çalışır)
+const ENGINE_JS = (() => {
+  const rd = (f) => fs.readFileSync(path.join(__dirname, "src", f + ".js"), "utf8");
+  const mods = ["rules", "engine"].map((n) =>
+    "(function () { var module = { exports: {} }, exports = module.exports, require = req;\n" + rd(n) + "\nM[" + JSON.stringify(n) + "] = module.exports; })();");
+  return "(function () { var M = {}; function req(n) { return M[String(n).replace('./', '')]; }\n" + mods.join("\n") +
+    "\nwindow.DapaiEngine = { R: M.rules, E: M.engine }; })();";
+})();
+app.get("/engine.js", (req, res) => { res.type("application/javascript"); res.setHeader("Cache-Control", "no-cache"); res.send(ENGINE_JS); });
 
 app.use(express.static(path.join(__dirname, "public"), {
   setHeaders(res, file) {
@@ -358,7 +368,7 @@ io.on("connection", (socket) => {
   socket.on("play", act((room, pid, d, fx) => E.play(room, pid, d, fx), true));
   socket.on("draw", act((room, pid, d, fx) => E.draw(room, pid, fx), true));
   socket.on("pass", act((room, pid) => E.pass(room, pid), true));
-  socket.on("uno", act((room, pid, d, fx) => E.sayUno(room, pid, fx)));
+  socket.on("dapai", act((room, pid, d, fx) => E.sayUno(room, pid, fx)));
 
   socket.on("sawScores", () => {
     const { room, me } = ctx();
