@@ -1,7 +1,7 @@
 /* Dapai istemcisi — tek dosya */
 (function () {
   "use strict";
-  var CLIENT_V = "V96";
+  var CLIENT_V = "V97";
 
   // ---------- Yardımcılar ----------
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -772,9 +772,9 @@
       '<p class="sub">2 kartın kaldığında, cezan yokken Dapai butonuna bas. Basmadan tek karta düşersen <b>2 ceza kartı</b> çekersin.</p>');
     var groups = [
       [5, [N("yellow", 7)], "Sayı kartları"],
-      [10, [K("green", "skip"), K("red", "reverse"), K("blue", "draw2"), K("black", "wdraw2"), K("black", "wtarget2"), K("black", "wskip2")], "Atla, Ters, +2, Joker +2, Hedef +2, Çift Atla"],
-      [20, [K("black", "wild"), K("black", "wild4"), K("black", "swap"), K("black", "shuffle")], "Joker, Joker +4, El Değiş, El Karıştır"],
-      [30, [K("black", "skipall"), K("black", "custom")], "Herkesi Atla, Özel Joker 8"]
+      [10, [K("green", "skip"), K("red", "reverse"), K("blue", "draw2"), K("black", "wdraw2"), K("black", "wtarget2"), K("black", "wskip2"), K("red", "eye"), K("yellow", "gift")], "Atla, Ters, +2, Joker +2, Hedef +2, Çift Atla, Göz, Hediye"],
+      [20, [K("black", "wild"), K("black", "wild4"), K("black", "swap"), K("black", "shuffle"), K("green", "shield"), K("black", "mirror"), K("black", "bomb")], "Joker, Joker +4, El Değiş, El Karıştır, Kalkan, Ayna, Bomba"],
+      [30, [K("black", "custom")], "Özel Joker 8"]
     ];
     var pt = '<div class="pts">';
     groups.forEach(function (g) {
@@ -791,7 +791,7 @@
   }
 
   function cards() {
-    var order = ["shield", "mirror", "eye", "bomb", "gift", "skip", "reverse", "draw2", "wild", "wild4", "custom", "wdraw2", "wtarget2", "wskip2", "swap", "shuffle", "skipall", "number"];
+    var order = ["shield", "mirror", "eye", "bomb", "gift", "skip", "reverse", "draw2", "wild", "wild4", "custom", "wdraw2", "wtarget2", "wskip2", "swap", "shuffle", "number"];
     var sample = { number: "yellow", skip: "green", reverse: "red", draw2: "blue", shield: "green", eye: "red", gift: "yellow" };
     var h = "";
     order.forEach(function (t) {
@@ -799,7 +799,7 @@
       var c = { color: sample[t] || "black", type: t, value: t === "number" ? 7 : t };
       h += '<div class="panel guide">' + cardHtml(c) + "<div><b>" + info.name + (info.isNew ? ' <span class="newb">YENİ</span>' : "") + '</b><p class="sub" style="margin:0">' + info.text + '</p><div class="cnt">' + info.count + " · elde kalırsa " + info.pts + " puan</div></div></div>";
     });
-    h += '<div class="panel"><b>Deste toplamı: 134 kart</b><p class="sub" style="margin:6px 0 0">112 renkli kart (sayı, Atla, Ters, +2, Kalkan, Göz, Hediye) ve 22 lacivert joker kart.</p></div>';
+    h += '<div class="panel"><b>Deste toplamı: 132 kart</b><p class="sub" style="margin:6px 0 0">112 renkli kart (sayı, Atla, Ters, +2, Kalkan, Göz, Hediye) ve 20 lacivert joker kart.</p></div>';
     return infoPage("Özel kartlar", h);
   }
 

@@ -10,7 +10,7 @@ const R = require("./src/rules");
 const E = require("./src/engine");
 const B = require("./src/bots");
 
-const VERSION = "V96";
+const VERSION = "V97";
 const PORT = process.env.PORT || 3000;
 const STORE = path.join(__dirname, "rooms-v85.json");
 const EMPTY_CLOSE_MS = 45000;

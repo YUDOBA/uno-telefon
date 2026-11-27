@@ -12,7 +12,6 @@ const BLACK_COUNTS = {
   wdraw2: 2,    // Joker +2
   wtarget2: 2,  // Hedef +2
   wskip2: 2,    // Çift Atla
-  skipall: 2,   // Herkesi Atla
   custom: 2,    // Özel Joker 8
   swap: 1,      // El Değiş
   shuffle: 1,   // El Karıştır
