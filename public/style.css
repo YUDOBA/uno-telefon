@@ -2,8 +2,9 @@
 :root {
   --bg: #0b1220; --panel: #152033; --panel2: #24344f; --line: #2c3d5c;
   --ink: #f4f1ea; --muted: #9aa8bf; --accent: #ffd000;
-  --red: #e10600; --yellow: #f7d117; --green: #00964b; --blue: #1e63d0;
-  --b-red: #E31C23; --b-yellow: #F5C400; --b-green: #2E9B3E; --b-blue: #1C6DD0;
+  /* Dapai kart renkleri (iç adlar eski): red=Turuncu, yellow=Pembe, green=Turkuaz, blue=Mor */
+  --red: #F79A2E; --yellow: #D93A75; --green: #1BB3BF; --blue: #6C47D9; --navy: #161B2E;
+  --b-red: #F79A2E; --b-yellow: #D93A75; --b-green: #1BB3BF; --b-blue: #6C47D9;
   --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -58,7 +59,7 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 /* Sürüm etiketi ve geri butonu */
 .ver-tag { position: fixed; left: 14px; bottom: calc(4px + var(--safe-b)); margin: 0; z-index: 80; font-size: 11px; font-weight: 800; color: var(--muted); opacity: .8; pointer-events: none; }
 .back-btn { position: fixed; top: calc(var(--safe-t) + 10px); right: 12px; width: 52px; height: 52px; z-index: 200; border: 0; border-radius: 14px;
-  background: var(--b-yellow); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,.3); padding: 0; }
+  background: var(--accent); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,.3); padding: 0; }
 .back-btn svg { width: 24px; height: 24px; }
 
 /* Bildirim balonu */
@@ -78,7 +79,7 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .tile { aspect-ratio: 1 / 1; width: 100%; border: 0; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
   font-weight: 800; font-size: 1rem; line-height: 1.15; text-align: center; color: #fff; padding: 8px; }
 .tile svg { width: 46px; height: 46px; flex-shrink: 0; }
-.t-red { background: var(--b-red); } .t-yellow { background: var(--b-yellow); color: #111; } .t-green { background: var(--b-green); } .t-blue { background: var(--b-blue); }
+.t-red { background: var(--b-red); } .t-yellow { background: var(--b-yellow); } .t-green { background: var(--b-green); } .t-blue { background: var(--b-blue); }
 @media (max-height: 700px) { .tiles { max-width: 340px; margin: 0 auto; } }
 @media (max-height: 620px) { .tile svg { width: 34px; height: 34px; } .tile { font-size: .88rem; gap: 4px; } .tiles { max-width: 290px; } }
 
@@ -101,15 +102,18 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 /* ---------- Kartlar ---------- */
 .ucard { position: relative; width: 66px; height: 100px; border-radius: 10px; border: 3px solid #f3f3f3; flex-shrink: 0; overflow: hidden; color: #fff;
   box-shadow: 0 6px 14px rgba(0,0,0,.4); --k: #111; }
-.ucard.red { background: var(--red); --k: var(--red); } .ucard.yellow { background: var(--yellow); --k: #a88400; }
-.ucard.green { background: var(--green); --k: var(--green); } .ucard.blue { background: var(--blue); --k: var(--blue); }
-.ucard.black { background: #111; --k: #111; }
+.ucard.red { background: var(--red); --k: #C2700F; } .ucard.yellow { background: var(--yellow); --k: #B82A5E; }
+.ucard.green { background: var(--green); --k: #0E8591; } .ucard.blue { background: var(--blue); --k: #5530C4; }
+.ucard.black { background: var(--navy); --k: var(--navy); }
+.ucard .sy { position: absolute; width: 11px; height: 11px; color: #fff; display: flex; }
+.ucard .sy svg { width: 100%; height: 100%; }
+.ucard .tr { top: 5px; right: 5px; } .ucard .bl { bottom: 5px; left: 5px; transform: rotate(180deg); }
 .ucard .c { position: absolute; font-weight: 900; font-size: 13px; line-height: 1; display: flex; align-items: center; }
 .ucard .c svg { width: 14px; height: 14px; }
 .ucard .tl { top: 4px; left: 5px; } .ucard .br { bottom: 4px; right: 5px; transform: rotate(180deg); }
-.oval { position: absolute; left: 50%; top: 50%; width: 44px; height: 68px; transform: translate(-50%,-50%) rotate(-18deg); background: #fff; border-radius: 50%;
+.oval { position: absolute; left: 50%; top: 50%; width: 42px; height: 56px; transform: translate(-50%,-50%); background: #fff; border-radius: 11px;
   display: flex; align-items: center; justify-content: center; }
-.oval > * { transform: rotate(18deg); }
+.oval > * { transform: none; }
 .oval .n { font-size: 30px; font-weight: 900; color: var(--k); }
 .oval .t { font-size: 19px; font-weight: 900; color: var(--k); letter-spacing: -.5px; }
 .oval svg { width: 30px; height: 30px; color: var(--k); }
@@ -169,7 +173,8 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .dir.rev { color: #7ecbff; }
 .dir.rev svg { transform: scaleX(-1); }
 .colname { font-weight: 900; font-size: .95rem; }
-.col-red { color: #ff6b6b; } .col-yellow { color: #f7d117; } .col-green { color: #3dce7a; } .col-blue { color: #6aa8ff; }
+.col-red { color: #FFA45C; } .col-yellow { color: #FF7AA6; } .col-green { color: #3FD0DF; } .col-blue { color: #A68BFF; }
+.colname .sy, .colors .sy { display: inline-flex; width: 1em; height: 1em; vertical-align: -0.12em; margin-right: 4px; } .colname .sy svg, .colors .sy svg { width: 100%; height: 100%; }
 .seat { position: absolute; width: 76px; transform: translate(-50%,-50%); background: #1a2740; border-radius: 10px; padding: 4px 3px; text-align: center; border: 2px solid transparent; z-index: 7; }
 .seat.turn { background: #c9a227; color: #1a1400; border-color: #ffe38a; }
 .seat.pen { background: #2a6f8f; color: #e8f6ff; border-color: #7ecbff; }
@@ -224,7 +229,6 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .colors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .colors button { height: 54px; font-size: .9rem !important; border: 3px solid transparent; border-radius: 14px; color: #fff; font-weight: 900; font-size: 1.05rem; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
 .colors button.on { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.35); }
-.colors .c-yellow { color: #2a2200; text-shadow: none; }
 .targets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .targets button { width: 100%; text-align: left; padding: 8px 10px; flex-direction: column; gap: 2px; min-height: 48px; border: 2px solid transparent; border-radius: 12px; background: var(--panel); font-weight: 700; display: flex; justify-content: space-between; }
 .targets button.on { border-color: var(--accent); background: #2f2a10; }

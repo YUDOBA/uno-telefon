@@ -2,7 +2,8 @@
 // Dapai kart kuralları: deste, oynanabilirlik, etiket ve puan.
 
 const COLORS = ["red", "yellow", "green", "blue"];
-const COLOR_TR = { red: "Kırmızı", yellow: "Sarı", green: "Yeşil", blue: "Mavi" };
+// İç anahtarlar eski kalır; Dapai renkleri: Turuncu, Pembe, Turkuaz, Mor
+const COLOR_TR = { red: "Turuncu", yellow: "Pembe", green: "Turkuaz", blue: "Mor" };
 
 // Siyah kartlar ve destedeki adetleri
 const BLACK_COUNTS = {
