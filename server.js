@@ -10,7 +10,7 @@ const R = require("./src/rules");
 const E = require("./src/engine");
 const B = require("./src/bots");
 
-const VERSION = "V95";
+const VERSION = "V96";
 const PORT = process.env.PORT || 3000;
 const STORE = path.join(__dirname, "rooms-v85.json");
 const EMPTY_CLOSE_MS = 45000;
@@ -124,6 +124,7 @@ function publicRoom(room, viewerId) {
       stackKind: penal ? g.stackKind : null, isPenalty: penal,
       penaltyLeft: g.drawQueue.length ? g.drawQueue[0].left : (g.plusStack || 0),
       drewOnce: !!(g.pendingDrawn && g.pendingDrawn.playerId === viewerId),
+      bomb: g.bomb ? g.bomb.left : 0,
       winnerId: g.winnerId
     } : null
   };
@@ -155,6 +156,11 @@ function emitRoom(room) {
 
 function flush(room, fx) {
   fx.events.forEach(([name, data]) => io.to(room.code).emit(name, data));
+  // Sadece bir oyuncuya giden olaylar (Göz)
+  (fx.private || []).forEach(([pid, name, data]) => {
+    const p = room.players.find((x) => x.id === pid);
+    if (p && p.socketId) io.to(p.socketId).emit(name, data);
+  });
   emitRoom(room);
 }
 
@@ -367,7 +373,7 @@ io.on("connection", (socket) => {
   };
   socket.on("play", act((room, pid, d, fx) => E.play(room, pid, d, fx), true));
   socket.on("draw", act((room, pid, d, fx) => E.draw(room, pid, fx), true));
-  socket.on("pass", act((room, pid) => E.pass(room, pid), true));
+  socket.on("pass", act((room, pid, d, fx) => E.pass(room, pid, fx), true));
   socket.on("dapai", act((room, pid, d, fx) => E.sayUno(room, pid, fx)));
 
   socket.on("sawScores", () => {

@@ -1,7 +1,7 @@
 /* Dapai istemcisi — tek dosya */
 (function () {
   "use strict";
-  var CLIENT_V = "V95";
+  var CLIENT_V = "V96";
 
   // ---------- Yardımcılar ----------
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -28,8 +28,8 @@
     green: '<svg viewBox="0 0 20 20"><path d="M1.5 7.5q4.25-4.5 8.5 0t8.5 0M1.5 13.5q4.25-4.5 8.5 0t8.5 0" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>',
     blue: '<svg viewBox="0 0 20 20"><path d="M12.6 2a8 8 0 1 0 5.4 13.4A6.6 6.6 0 0 1 12.6 2z" fill="currentColor"/></svg>'
   };
-  var NEEDS_COLOR = { wild: 1, wild4: 1, custom: 1, wdraw2: 1, wtarget2: 1, wskip2: 1, swap: 1, shuffle: 1, skipall: 1 };
-  var HARD_STACKS = { wild4: 1, custom: 1, wdraw2: 1, wtarget2: 1 };
+  var NEEDS_COLOR = { wild: 1, wild4: 1, custom: 1, wdraw2: 1, wtarget2: 1, wskip2: 1, swap: 1, shuffle: 1, skipall: 1, mirror: 1, bomb: 1 };
+  var DEFENSE = { shield: 1, mirror: 1 }; // ceza gelince atılabilir
 
   // ---------- Durum ----------
   var S = {
@@ -51,6 +51,11 @@
     skip2: SV('<circle cx="8" cy="12" r="6"/><path d="M3.8 16.2l8.4-8.4"/><circle cx="16" cy="12" r="6"/><path d="M11.8 16.2l8.4-8.4"/>', 2.3),
     swap: SV('<path d="M8 3L4 7l4 4"/><path d="M4 7h16"/><path d="M16 21l4-4-4-4"/><path d="M20 17H4"/>'),
     shuffle: SV('<path d="M2 18h2.5c4 0 6-12 11-12H22"/><path d="M2 6h2.5c4 0 6 12 11 12H22"/><path d="M19 3l3 3-3 3"/><path d="M19 15l3 3-3 3"/>', 2.3),
+    shield: SV('<path d="M12 2.8l7.5 3v5.6c0 4.9-3.3 8.4-7.5 9.8-4.2-1.4-7.5-4.9-7.5-9.8V5.8z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>', 2.3),
+    mirror: SV('<ellipse cx="12" cy="9" rx="6.2" ry="7"/><path d="M12 16v6.2"/><path d="M9.2 7.8l2.6-2.6M9.4 11.4l5-5"/>', 2.3),
+    eye: SV('<path d="M1.8 12s3.7-7 10.2-7 10.2 7 10.2 7-3.7 7-10.2 7S1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3.2"/>', 2.3),
+    bomb: SV('<circle cx="10" cy="14.5" r="7.2" fill="currentColor" stroke="none"/><rect x="12.6" y="6.4" width="4.6" height="3.4" rx="1" transform="rotate(45 14.9 8.1)" fill="currentColor" stroke="none"/><path d="M16.6 6.2c.7-1.9 2.2-2.8 3.7-2.3"/><path d="M21.2 1.6v1.2M22.6 3.2h-1.2M20.2 2.2l-.6-.6" stroke-width="1.6"/><circle cx="7.4" cy="12" r="1.6" fill="#fff" stroke="none" opacity=".55"/>', 2),
+    gift: SV('<rect x="3" y="9" width="18" height="12" rx="1.5"/><path d="M12 9v12M3 13.5h18"/><path d="M12 9C10 5 6 4.5 6 7s4 2 6 2zM12 9c2-4 6-4.5 6-2s-4 2-6 2z"/>', 2.1),
     again: SV('<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/>'),
     back: '<svg viewBox="0 0 48 48"><path d="M30 8L14 24l16 16" fill="none" stroke="#111" stroke-width="6" stroke-linecap="square"/></svg>',
     dir: SV('<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/>', 3),
@@ -77,7 +82,12 @@
     wskip2: { name: "Çift Atla", text: "Her zaman atılır. Renk seçilir, sonraki 2 oyuncu atlanır.", count: "2 adet", pts: 10 },
     swap: { name: "El Değiş", text: "Her zaman atılır. Renk seçilir, seçtiğin oyuncuyla elleriniz yer değiştirir.", count: "1 adet", pts: 20 },
     shuffle: { name: "El Karıştır", text: "Her zaman atılır. Renk seçilir, bütün eller toplanıp karıştırılır, herkese eski sayısı kadar dağıtılır.", count: "1 adet", pts: 20 },
-    skipall: { name: "Herkesi Atla", text: "Her zaman atılır. Renk seçilir, diğer herkes atlanır ve atan tekrar oynar.", count: "2 adet", pts: 30 }
+    skipall: { name: "Herkesi Atla", text: "Her zaman atılır. Renk seçilir, diğer herkes atlanır ve atan tekrar oynar.", count: "2 adet", pts: 30 },
+    shield: { name: "Kalkan", text: "Sana ceza gelince hangi renk olursa olsun atılır ve cezanın tamamını siler. Cezasız sırada aynı renge ya da başka Kalkana atılır.", count: "Her renkten 1 · toplam 4", pts: 20, isNew: 1 },
+    mirror: { name: "Ayna", text: "Sana ceza gelince atılır, cezanın tamamı cezayı atana geri döner. Cezasız sırada Joker gibi atılır, renk seçilir.", count: "2 adet", pts: 20, isNew: 1 },
+    eye: { name: "Göz", text: "Bir oyuncu seçersin, elindeki kartları 5 saniye yalnızca sen görürsün.", count: "Her renkten 1 · toplam 4", pts: 10, isNew: 1 },
+    bomb: { name: "Bomba", text: "Her zaman atılır, renk seçilir. 3 hamle sonra o an sırası gelen oyuncu 3 kart çeker.", count: "2 adet", pts: 20, isNew: 1 },
+    gift: { name: "Hediye", text: "Elinden bir kart seçip istediğin oyuncuya verirsin.", count: "Her renkten 1 · toplam 4", pts: 10, isNew: 1 }
   };
   var WIN_BONUS = 20;
 
@@ -97,12 +107,13 @@
     else if (t === "swap") { corner = IC.swap; mid = IC.swap; }
     else if (t === "shuffle") { corner = IC.shuffle; mid = IC.shuffle; }
     else if (t === "skipall") { corner = IC.again; mid = IC.again; }
+    else if (IC[t] && CARD_INFO[t] && CARD_INFO[t].isNew) { corner = IC[t]; mid = IC[t]; }
     var cr = corner ? '<span class="c tl">' + corner + '</span><span class="c br">' + corner + "</span>" : "";
     var sy = SYM[c.color] ? '<span class="sy tr">' + SYM[c.color] + '</span><span class="sy bl">' + SYM[c.color] + "</span>" : "";
     return cr + sy + '<div class="oval">' + mid + "</div>";
   }
   function cardHtml(c, cls, attrs) {
-    return '<div class="ucard ' + c.color + " " + (cls || "") + '"' + (attrs || "") + ">" + cardFace(c) + (c.fresh ? '<span class="fresh-tag">YENİ</span>' : "") + "</div>";
+    return '<div class="ucard ' + c.color + " " + (cls || "") + '" data-t="' + c.type + '"' + (attrs || "") + ">" + cardFace(c) + (c.fresh ? '<span class="fresh-tag">YENİ</span>' : "") + "</div>";
   }
   function cardName(c) {
     if (c.type === "number") return COLOR_TR[c.color] + " " + c.value;
@@ -113,9 +124,8 @@
   function canPlay(card, top, chosen, stack) {
     if (!card) return false;
     if (!top) return true;
-    if (stack === "draw2") return card.type === "draw2";
-    if (stack && HARD_STACKS[stack]) return false;
-    if (card.type === "wild4") return ["number", "wild", "wild4", "custom"].indexOf(top.type) >= 0;
+    if (stack) return !!DEFENSE[card.type] || (stack === "draw2" && card.type === "draw2");
+    if (card.type === "wild4") return ["number", "wild", "wild4", "custom", "mirror", "bomb"].indexOf(top.type) >= 0;
     if (card.color === "black") return true;
     var color = top.color === "black" ? chosen : top.color;
     if (card.color === color) return true;
@@ -179,6 +189,17 @@
     addFx({ kind: "play", pid: d.fromId, card: d.card, dur: 1600 });
   });
   socket.on("cardDraw", function (d) { addFx({ kind: "draw", pid: d && d.toId, dur: 800 }); });
+  // Göz: seçilen oyuncunun eli 5 saniye görünür
+  socket.on("peek", function (d) {
+    S.peek = d;
+    var mine = d;
+    render();
+    setTimeout(function () { if (S.peek === mine) { S.peek = null; render(); } }, 5000);
+  });
+  socket.on("bombBoom", function (d) {
+    toast("Bomba patladı! " + (d.playerId === S.me.id ? "Sana" : d.name + " oyuncusuna") + " 3 kart ceza.", true);
+    try { if (navigator.vibrate) navigator.vibrate([200, 80, 200]); } catch (e) {}
+  });
   socket.on("dapaiShout", function (d) {
     S.burst = { pid: d.playerId, name: d.name, start: Date.now() };
     if (d.playerId !== S.me.id) { try { if (navigator.vibrate) navigator.vibrate([400, 120, 400, 120, 400]); } catch (e) {} }
@@ -454,7 +475,7 @@
     h += '<div class="table">';
     var dirRev = g.direction !== 1;
     h += '<div class="felt"><div class="dir' + (dirRev ? " rev" : "") + '">' + IC.dir + (dirRev ? "Ters" : "Saat") + "</div>" + cardHtml(g.top) +
-      '<div class="colname col-' + g.chosenColor + '">' + (SYM[g.chosenColor] ? '<span class="sy">' + SYM[g.chosenColor] + "</span>" : "") + (COLOR_TR[g.chosenColor] || "") + "</div></div>";
+      '<div class="colname col-' + g.chosenColor + '">' + (SYM[g.chosenColor] ? '<span class="sy">' + SYM[g.chosenColor] + "</span>" : "") + (COLOR_TR[g.chosenColor] || "") + "</div>" + (g.bomb ? '<div class="bomb-tag" title="Bomba">' + IC.bomb + "<b>" + g.bomb + "</b></div>" : "") + "</div>";
     st.seats.forEach(function (id) {
       var p = player(id); if (!p) return;
       var pos = seatPos(id), on = g.actorId === id;
@@ -478,6 +499,7 @@
 
     // Katmanlar
     if (S.pick) h += pickOverlay();
+    else if (S.peek) h += peekOverlay();
     return h + "</div>";
   }
 
@@ -507,20 +529,32 @@
     }
   }
 
+  function peekOverlay() {
+    var d = S.peek, h = '<div class="overlay peek" data-act="peekClose"><div class="body">';
+    h += '<div class="ov-head"><span class="peek-ic">' + IC.eye + "</span><h2>" + esc(d.name) + " oyuncusunun eli</h2></div>";
+    h += '<p class="sub">' + d.cards.length + " kart · 5 saniye sonra kapanır</p><div class=\"peek-row\">";
+    d.cards.forEach(function (c) { h += mini(c); });
+    return h + '</div><p class="sub">Kapatmak için dokun</p></div></div>';
+  }
   function pickOverlay() {
     var p = S.pick, c = p.card, st = S.state;
     var others = st.seats.map(player).filter(function (x) { return x && x.id !== S.me.id; });
-    var needTarget = c.type === "wtarget2" || c.type === "swap", custom = c.type === "custom";
+    var needTarget = c.type === "wtarget2" || c.type === "swap" || c.type === "eye" || c.type === "gift", custom = c.type === "custom";
+    var needColor = !!NEEDS_COLOR[c.type], isGift = c.type === "gift";
     var h = '<div class="overlay"><div class="body">';
     h += '<div class="ov-head">' + mini(c) + "<h2>" + esc(cardName(c)) + "</h2></div>";
-    h += '<p class="sub">Yeni rengi seç</p><div class="colors">';
-    ["yellow", "green", "red", "blue"].forEach(function (k) {
-      h += '<button class="c-' + k + (p.color === k ? " on" : "") + '" style="background:var(--' + k + ')" data-act="pickColor" data-arg="' + k + '"><span class="sy">' + SYM[k] + "</span>" + COLOR_TR[k] + "</button>";
-    });
-    h += "</div>";
-    var ready = !!p.color;
+    var ready = true;
+    if (needColor) {
+      h += '<p class="sub">Yeni rengi seç</p><div class="colors">';
+      ["yellow", "green", "red", "blue"].forEach(function (k) {
+        h += '<button class="c-' + k + (p.color === k ? " on" : "") + '" style="background:var(--' + k + ')" data-act="pickColor" data-arg="' + k + '"><span class="sy">' + SYM[k] + "</span>" + COLOR_TR[k] + "</button>";
+      });
+      h += "</div>";
+      ready = !!p.color;
+    }
     if (needTarget) {
-      h += '<p class="sub">' + (c.type === "swap" ? "Elini kiminle değiştireceksin?" : "Kim 2 kart çeksin?") + '</p><div class="targets">';
+      var ask = { swap: "Elini kiminle değiştireceksin?", wtarget2: "Kim 2 kart çeksin?", eye: "Kimin eline bakacaksın?", gift: "Hediyeyi kime vereceksin?" };
+      h += '<p class="sub">' + ask[c.type] + '</p><div class="targets">';
       others.forEach(function (o) {
         h += '<button class="' + (p.target === o.id ? "on" : "") + '" data-act="pickTarget" data-arg="' + o.id + '"><span>' + esc(o.name) + "</span><span>" + o.cardCount + " kart</span></button>";
       });
@@ -540,10 +574,15 @@
     h += "</div>";
     var rest = myHand().map(function (x, i) { return { c: x, i: i }; }).filter(function (it) { return it.i !== p.i; }).sort(handSort);
     var avail = Math.min(440, window.innerWidth - 32), stepW = rest.length > 1 ? Math.min(50, (avail - 46) / (rest.length - 1)) : 50;
-    h += '<div class="ov-hand"><p class="sub">Elindeki kartlar (' + rest.length + ")</p><div class=\"row\">";
-    rest.forEach(function (it, k) { h += '<span class="ovc" style="margin-left:' + (k ? Math.round(stepW - 46) : 0) + 'px">' + mini(it.c) + "</span>"; });
+    h += '<div class="ov-hand' + (isGift ? " gift" : "") + '"><p class="sub">' + (isGift ? "Hediye edeceğin kartı seç" : "Elindeki kartlar (" + rest.length + ")") + "</p><div class=\"row\">";
+    rest.forEach(function (it, k) {
+      var ml = 'style="margin-left:' + (k ? Math.round(stepW - 46) : 0) + 'px"';
+      if (isGift) h += '<button class="ovc gsel' + (p.gift === it.i ? " on" : "") + '" ' + ml + ' data-act="pickGift" data-arg="' + it.i + '">' + mini(it.c) + "</button>";
+      else h += '<span class="ovc" ' + ml + ">" + mini(it.c) + "</span>";
+    });
     h += "</div></div>";
-    var simple = !needTarget && !custom;
+    if (isGift) ready = ready && p.gift != null;
+    var simple = needColor && !needTarget && !custom;
     h += '<div class="foot"><button class="btn btn-ghost" data-act="pickCancel">Vazgeç</button>' +
       (simple ? '<div class="sub" style="align-self:center;text-align:center">Renge dokununca atılır</div>' : '<button class="btn btn-main" data-act="pickOk"' + (ready ? "" : " disabled") + ">Tamam</button>") + "</div>";
     return h + "</div>";
@@ -721,7 +760,8 @@
       '<div class="flow">' + mini(K("blue", "draw2")) + '<span class="cap">gelince sıradaki oyuncu ya:</span></div>' +
       '<div class="choice"><span class="cl">A</span>' + mini(K("red", "draw2"), "ok") + '<span class="cap">Elindeki herhangi renk +2\'yi atar, yığın büyür, ceza bir sonrakine geçer</span></div>' +
       '<div class="choice"><span class="cl">B</span><span class="pill pen">Cezayı çeker</span>' + arrow() + '<span class="pill ok">Sonra oynar</span></div>' +
-      '<p class="sub"><b>Cezayı çeken sırasını kaybetmez.</b> Yalnızca +2 üstüne +2 atılabilir; Joker +4, Joker +2, Hedef +2 ve Özel Joker 8 cezası çekilmek zorundadır. Hedef +2 ve Özel Joker 8 cezası bitince sıra, kartı atanın yanındakine geçer.</p>' +
+      '<div class="choice"><span class="cl">C</span>' + mini(K("green", "shield"), "ok") + mini(K("black", "mirror"), "ok") + '<span class="cap">Kalkan cezayı siler, Ayna cezayı atana geri yollar</span></div>' +
+      '<p class="sub"><b>Cezayı çeken sırasını kaybetmez.</b> Kalkan ve Ayna her cezaya karşı atılabilir. Bunların dışında yalnızca +2 üstüne +2 atılabilir; Joker +4, Joker +2, Hedef +2 ve Özel Joker 8 cezası çekilmek zorundadır. Hedef +2 ve Özel Joker 8 cezası bitince sıra, kartı atanın yanındakine geçer.</p>' +
       '<div class="match"><div class="top">' + mini(K("black", "wild4")) + '<span class="cap">Joker +4 nereye?</span></div><div class="opts">' +
       '<div>' + mini(N("green", 3), "ok") + '<span class="cap">Sayı</span></div>' +
       '<div>' + mini(K("black", "wild"), "ok") + '<span class="cap">Joker</span></div>' +
@@ -751,15 +791,15 @@
   }
 
   function cards() {
-    var order = ["skip", "reverse", "draw2", "wild", "wild4", "custom", "wdraw2", "wtarget2", "wskip2", "swap", "shuffle", "skipall", "number"];
-    var sample = { number: "yellow", skip: "green", reverse: "red", draw2: "blue" };
+    var order = ["shield", "mirror", "eye", "bomb", "gift", "skip", "reverse", "draw2", "wild", "wild4", "custom", "wdraw2", "wtarget2", "wskip2", "swap", "shuffle", "skipall", "number"];
+    var sample = { number: "yellow", skip: "green", reverse: "red", draw2: "blue", shield: "green", eye: "red", gift: "yellow" };
     var h = "";
     order.forEach(function (t) {
       var info = CARD_INFO[t];
       var c = { color: sample[t] || "black", type: t, value: t === "number" ? 7 : t };
-      h += '<div class="panel guide">' + cardHtml(c) + "<div><b>" + info.name + '</b><p class="sub" style="margin:0">' + info.text + '</p><div class="cnt">' + info.count + " · elde kalırsa " + info.pts + " puan</div></div></div>";
+      h += '<div class="panel guide">' + cardHtml(c) + "<div><b>" + info.name + (info.isNew ? ' <span class="newb">YENİ</span>' : "") + '</b><p class="sub" style="margin:0">' + info.text + '</p><div class="cnt">' + info.count + " · elde kalırsa " + info.pts + " puan</div></div></div>";
     });
-    h += '<div class="panel"><b>Deste toplamı: 118 kart</b><p class="sub" style="margin:6px 0 0">100 renkli kart (sayı, Atla, Ters, +2) ve 18 siyah kart.</p></div>';
+    h += '<div class="panel"><b>Deste toplamı: 134 kart</b><p class="sub" style="margin:6px 0 0">112 renkli kart (sayı, Atla, Ters, +2, Kalkan, Göz, Hediye) ve 22 lacivert joker kart.</p></div>';
     return infoPage("Özel kartlar", h);
   }
 
@@ -850,7 +890,7 @@
         hand: g.hands.me.map(function (c) { return { color: c.color, type: c.type, value: c.value, fresh: !!c.fresh }; }),
         deckCount: g.deck.length, plusStack: g.plusStack || 0, stackKind: penal ? g.stackKind : null, isPenalty: penal,
         penaltyLeft: g.drawQueue.length ? g.drawQueue[0].left : (g.plusStack || 0),
-        drewOnce: !!(g.pendingDrawn && g.pendingDrawn.playerId === "me"), winnerId: g.winnerId
+        drewOnce: !!(g.pendingDrawn && g.pendingDrawn.playerId === "me"), winnerId: g.winnerId, bomb: g.bomb ? g.bomb.left : 0
       }
     };
   }
@@ -1059,6 +1099,8 @@
       render();
     },
     pickTarget: function (id) { S.pick.target = id; render(); },
+    pickGift: function (i) { S.pick.gift = +i; render(); },
+    peekClose: function () { S.peek = null; render(); },
     assign: function (arg) {
       var a = arg.split(","), id = a[0], as = S.pick.assign, sum = 0;
       Object.keys(as).forEach(function (k) { if (k !== id) sum += as[k]; });
@@ -1075,7 +1117,7 @@
   function sendPick() {
     var p = S.pick; if (!p) return;
     var assign = Object.keys(p.assign).filter(function (k) { return p.assign[k] > 0; }).map(function (k) { return { playerId: k, n: p.assign[k] }; });
-    socket.emit("play", { cardIndex: p.i, chosenColor: p.color, targetId: p.target, assign: assign });
+    socket.emit("play", { cardIndex: p.i, chosenColor: p.color, targetId: p.target, assign: assign, giftIndex: p.gift });
     if (S.dropFly) { launchDrop(p.card, S.dropFly); S.dropFly = null; }
     S.pick = null; S.picked = null;
     render();
@@ -1088,6 +1130,8 @@
     tryPlay(i);
   }
   // Kartı atmayı dener; renk gereken kartta seçim ekranını açar. Atıldıysa ya da ekran açıldıysa true
+  // Atmadan önce seçim ekranı gereken kartlar (renk, oyuncu ya da hediye kartı)
+  function needsPick(c) { return !!(NEEDS_COLOR[c.type] || c.type === "eye" || (c.type === "gift" && myHand().length > 1)); }
   function tryPlay(i) {
     var st = S.state; if (!st || !st.game) return false;
     var g = st.game, c = myHand()[i];
@@ -1096,7 +1140,7 @@
     if (!canPlay(c, g.top, g.chosenColor, g.stackKind)) { toast("Bu kart oynanamaz."); return false; }
     if (T && !tutCardOk(c)) { tutHint(); return false; }
     S.picked = null;
-    if (NEEDS_COLOR[c.type]) { S.pick = { i: i, card: c, color: null, target: null, assign: {} }; render(); return true; }
+    if (needsPick(c)) { S.pick = { i: i, card: c, color: null, target: null, assign: {}, gift: null }; render(); return true; }
     socket.emit("play", { cardIndex: i });
     return true;
   }
@@ -1135,7 +1179,7 @@
       drop = dropInfo(d.el, e.clientX - d.x, e.clientY - d.y);
       ok = tryPlay(d.i);
     }
-    if (ok && c && !NEEDS_COLOR[c.type]) { if (d.el.isConnected) d.el.style.opacity = "0"; launchDrop(c, drop); }
+    if (ok && c && !needsPick(c)) { if (d.el.isConnected) d.el.style.opacity = "0"; launchDrop(c, drop); }
     else if (ok && c) S.dropFly = drop; // renk ekranı kapanınca uçacak
     else if (d.el.isConnected) dragBack(d.el);
   }

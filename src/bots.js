@@ -88,10 +88,17 @@ function pickCard(room, pid) {
 function playPick(room, pid, pick, fx) {
   const hand = room.game.hands[pid];
   const rest = hand.filter((_, i) => i !== pick.i);
+  // Hediye: en yüksek puanlı kartı verir
+  let giftIndex;
+  if (pick.c.type === "gift" && rest.length) {
+    let best = -1;
+    hand.forEach((c, i) => { if (i !== pick.i && (best < 0 || R.cardPoints(c) > R.cardPoints(hand[best]))) best = i; });
+    giftIndex = best;
+  }
   return E.play(room, pid, {
-    cardIndex: pick.i,
+    cardIndex: pick.i, giftIndex,
     chosenColor: bestColor(rest.length ? rest : hand),
-    targetId: pickTarget(room, pid, pick.c.type === "swap" && room.botLevel !== "easy"),
+    targetId: pickTarget(room, pid, (pick.c.type === "swap" || pick.c.type === "gift") && room.botLevel !== "easy"),
     assign: splitEight(room, pid)
   }, fx);
 }
@@ -104,7 +111,12 @@ function botStep(room, fx) {
   const p = room.players.find((x) => x.id === pid);
   if (!p || !p.isBot) return false;
 
-  if (g.drawQueue.length) { E.draw(room, pid, fx); return true; }
+  if (g.drawQueue.length) {
+    const pick = room.botLevel !== "easy" ? pickCard(room, pid) : null;
+    if (pick) playPick(room, pid, pick, fx);
+    else E.draw(room, pid, fx);
+    return true;
+  }
   if (g.plusStack > 0) {
     const pick = room.botLevel !== "easy" ? pickCard(room, pid) : null;
     if (pick) playPick(room, pid, pick, fx);
@@ -119,7 +131,7 @@ function botStep(room, fx) {
     pick = pickCard(room, pid);
   }
   if (pick) playPick(room, pid, pick, fx);
-  else E.pass(room, pid);
+  else E.pass(room, pid, fx);
   return true;
 }
 

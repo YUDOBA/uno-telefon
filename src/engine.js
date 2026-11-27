@@ -125,17 +125,24 @@ function totalOf(room, id) {
 function play(room, pid, opts, fx) {
   const g = room.game;
   if (!g || room.status !== "playing" || g.winnerId) return "Tur bitti.";
-  if (g.drawQueue.length) return "Önce ceza çekilmeli.";
-  if (g.currentId !== pid) return "Sıra sende değil.";
+  if (actorOf(g) !== pid) return g.drawQueue.length ? "Önce ceza çekilmeli." : "Sıra sende değil.";
   const hand = g.hands[pid];
   const idx = opts.cardIndex;
   const card = hand[idx];
   if (!card) return "Kart bulunamadı.";
+  if (g.drawQueue.length && !R.DEFENSE.has(card.type)) return "Önce ceza çekilmeli.";
   const top = g.discard[g.discard.length - 1];
   if (!R.canPlay(card, top, g.chosenColor, activeStack(g))) return "Bu kart oynanamaz.";
   if (R.NEEDS_COLOR.has(card.type) && !R.COLORS.includes(opts.chosenColor)) return "Renk seç.";
   const others = room.players.filter((p) => p.id !== pid);
   if (R.NEEDS_TARGET.has(card.type) && !others.some((p) => p.id === opts.targetId)) return "Oyuncu seç.";
+
+  // Hediye: verilecek kart elde olmalı (tek kart kaldıysa hediye yok)
+  let giftIdx = -1;
+  if (card.type === "gift" && hand.length > 1) {
+    giftIdx = parseInt(opts.giftIndex, 10);
+    if (!(giftIdx >= 0 && giftIdx < hand.length) || giftIdx === idx) return "Hediye edilecek kartı seç.";
+  }
 
   let queue = null;
   if (card.type === "custom") {
@@ -157,10 +164,26 @@ function play(room, pid, opts, fx) {
     }
   }
 
+  // Ceza durumu (Kalkan ve Ayna için)
+  const wasPen = isPenalty(g);
+  const penAmt = g.drawQueue.length ? g.drawQueue[0].left : (g.plusStack || 0);
+  const restQ = g.drawQueue.slice(1);
+  const prevKind = g.stackKind;
+  const src = g.penaltyBy;
+
   // Kartı at
   const by = nameOf(room, pid);
+  const n0 = hand.length;
   g.pendingDrawn = null;
+  let gift = null;
+  if (giftIdx >= 0) { gift = hand[giftIdx]; }
   hand.splice(idx, 1);
+  if (gift) {
+    hand.splice(hand.indexOf(gift), 1);
+    gift.fresh = true;
+    g.hands[opts.targetId].push(gift);
+    g.saidUno[opts.targetId] = false;
+  }
   delete card.fresh;
   g.discard.push(card);
   g.chosenColor = card.color === "black" ? opts.chosenColor : card.color;
@@ -171,7 +194,7 @@ function play(room, pid, opts, fx) {
 
   // Dapai demeden tek kart kaldıysa 2 ceza
   let unoMiss = false;
-  if (hand.length === 1 && !g.saidUno[pid]) { drawCards(g, pid, 2, fx); unoMiss = true; }
+  if (n0 === 2 && hand.length <= 1 && !g.saidUno[pid]) { drawCards(g, pid, 2, fx); unoMiss = true; }
   if (hand.length === 0) { endRound(room, pid); return null; }
   const missTxt = unoMiss ? " Dapai demediği için 2 ceza çekti." : "";
   const nxt = nextSeat(room, pid, 1);
@@ -180,22 +203,26 @@ function play(room, pid, opts, fx) {
 
   switch (card.type) {
     case "draw2":
+      g.penaltyBy = pid;
       g.plusStack = (g.stackKind === "draw2" ? g.plusStack : 0) + 2;
       g.stackKind = "draw2"; g.afterDrawTo = nxt; g.currentId = nxt;
       map[nxt] = "+2 yığını " + g.plusStack + ". +2 at ya da cezayı çek.";
       setNotice(g, by + " +2 attı. Yığın " + g.plusStack + "." + missTxt, map);
       break;
     case "wild4":
+      g.penaltyBy = pid;
       g.plusStack = 4; g.stackKind = "wild4"; g.afterDrawTo = nxt; g.currentId = nxt;
       map[nxt] = "+4 yedin. Cezayı çek.";
       setNotice(g, by + " Joker +4 attı." + colTxt + missTxt, map);
       break;
     case "wdraw2":
+      g.penaltyBy = pid;
       g.plusStack = 2; g.stackKind = "wdraw2"; g.afterDrawTo = nxt; g.currentId = nxt;
       map[nxt] = "Joker +2 yedin. Cezayı çek.";
       setNotice(g, by + " Joker +2 attı." + colTxt + missTxt, map);
       break;
     case "custom": {
+      g.penaltyBy = pid;
       g.drawQueue = queue; g.stackKind = "custom"; g.afterDrawTo = nxt; g.currentId = queue[0].playerId;
       const parts = queue.map((q) => nameOf(room, q.playerId) + " " + q.left).join(", ");
       queue.forEach((q) => { map[q.playerId] = "Sana " + q.left + " kart ceza. Cezayı çek."; });
@@ -203,6 +230,7 @@ function play(room, pid, opts, fx) {
       break;
     }
     case "wtarget2":
+      g.penaltyBy = pid;
       g.drawQueue = [{ playerId: opts.targetId, left: 2 }]; g.stackKind = "wtarget2";
       g.afterDrawTo = nxt; g.currentId = opts.targetId;
       map[opts.targetId] = "Hedef +2 sana geldi. Cezayı çek.";
@@ -252,12 +280,78 @@ function play(room, pid, opts, fx) {
       g.currentId = nxt;
       setNotice(g, by + " Joker attı." + colTxt + missTxt, map);
       break;
+    case "shield":
+    case "mirror": {
+      const back = card.type === "mirror" && wasPen && src && src !== pid && g.hands[src];
+      if (back) {
+        // Ayna: cezanın tamamı cezayı atana döner
+        g.drawQueue = [{ playerId: src, left: penAmt }].concat(restQ);
+        g.stackKind = "mirror"; g.penaltyBy = pid;
+        if (!restQ.length) g.afterDrawTo = src;
+        g.currentId = src;
+        map[src] = "Ayna! " + penAmt + " kartlık ceza sana döndü. Cezayı çek.";
+        setNotice(g, by + " Ayna attı: " + penAmt + " kartlık ceza " + nameOf(room, src) + " oyuncusuna döndü." + colTxt + missTxt, map);
+      } else if (wasPen) {
+        // Kalkan (ya da geri dönemeyen Ayna): ceza silinir
+        g.drawQueue = restQ;
+        if (restQ.length) { g.stackKind = prevKind; g.currentId = restQ[0].playerId; }
+        else { g.afterDrawTo = null; g.currentId = nxt; }
+        setNotice(g, by + " " + (card.type === "shield" ? "Kalkanla" : "Aynayla") + " " + penAmt + " kartlık cezayı sildi." + colTxt + missTxt, map);
+      } else {
+        g.currentId = nxt;
+        setNotice(g, by + " " + R.cardLabel(card) + " attı." + colTxt + missTxt, map);
+      }
+      break;
+    }
+    case "eye": {
+      const t = opts.targetId;
+      g.currentId = nxt;
+      if (!fx.private) fx.private = [];
+      fx.private.push([pid, "peek", { targetId: t, name: nameOf(room, t), cards: (g.hands[t] || []).map((c) => ({ color: c.color, type: c.type, value: c.value })) }]);
+      setNotice(g, by + " Göz ile " + nameOf(room, t) + " oyuncusunun eline baktı." + missTxt, map);
+      break;
+    }
+    case "bomb":
+      g.bomb = { left: 3, by: pid };
+      g.currentId = nxt;
+      setNotice(g, by + " Bomba kurdu! 3 hamle sonra sırası gelen 3 kart çeker." + colTxt + missTxt, map);
+      break;
+    case "gift":
+      g.currentId = nxt;
+      if (gift) map[opts.targetId] = by + " sana bir kart hediye etti.";
+      setNotice(g, by + (gift ? " " + nameOf(room, opts.targetId) + " oyuncusuna bir kart hediye etti." : " Hediye attı.") + missTxt, map);
+      break;
     default:
       g.currentId = nxt;
       setNotice(g, by + " " + R.cardLabel(card) + " attı." + missTxt, map);
   }
+  if (card.type !== "bomb") tickBomb(room, fx);
   if (fx.reshuffled) noteReshuffle(g);
   return null;
+}
+
+// Bomba: her hamlede bir azalır; sıfırda o an sırası gelen 3 kart çeker
+function tickBomb(room, fx) {
+  const g = room.game;
+  if (!g || !g.bomb || room.status !== "playing") return;
+  g.bomb.left--;
+  if (g.bomb.left > 0) return;
+  const by = g.bomb.by;
+  g.bomb = null;
+  const t = actorOf(g);
+  if (g.drawQueue.length) g.drawQueue[0].left += 3;
+  else if (g.plusStack > 0) {
+    g.drawQueue = [{ playerId: t, left: g.plusStack + 3 }];
+    g.plusStack = 0; g.stackKind = "bomb";
+  } else {
+    g.drawQueue = [{ playerId: t, left: 3 }];
+    g.stackKind = "bomb"; g.afterDrawTo = t; g.currentId = t;
+  }
+  g.penaltyBy = by;
+  if (fx) fx.events.push(["bombBoom", { playerId: t, name: nameOf(room, t) }]);
+  g.notice = "Bomba patladı! " + nameOf(room, t) + " 3 kart çeker. " + (g.notice || "");
+  g.noticeYou = {};
+  g.noticeYou[t] = "Bomba sende patladı! Cezayı çek.";
 }
 
 function noteReshuffle(g) {
@@ -315,7 +409,7 @@ function draw(room, pid, fx) {
   return null;
 }
 
-function pass(room, pid) {
+function pass(room, pid, fx) {
   const g = room.game;
   if (!g || room.status !== "playing" || g.winnerId) return "Tur bitti.";
   if (g.currentId !== pid || g.drawQueue.length) return "Sıra sende değil.";
@@ -325,6 +419,7 @@ function pass(room, pid) {
   g.currentId = nextSeat(room, pid, 1);
   room.moveSeq++;
   setNotice(g, nameOf(room, pid) + " pas geçti.");
+  tickBomb(room, fx);
   return null;
 }
 

@@ -15,15 +15,20 @@ const BLACK_COUNTS = {
   skipall: 2,   // Herkesi Atla
   custom: 2,    // Özel Joker 8
   swap: 1,      // El Değiş
-  shuffle: 1    // El Karıştır
+  shuffle: 1,   // El Karıştır
+  mirror: 2,    // Ayna
+  bomb: 2       // Bomba
 };
+// Her renkten birer tane olan Dapai kartları
+const COLOR_SPECIALS = ["shield", "eye", "gift"]; // Kalkan, Göz, Hediye
 
 // Tur sonunda elde kalan kartın puanı (az puan iyidir)
 const NUMBER_POINTS = 5;
 const CARD_POINTS = {
   skip: 10, reverse: 10, draw2: 10,
   wild: 20, wild4: 20, wdraw2: 10, wtarget2: 10, wskip2: 10,
-  skipall: 30, custom: 30, swap: 20, shuffle: 20
+  skipall: 30, custom: 30, swap: 20, shuffle: 20,
+  shield: 20, mirror: 20, eye: 10, bomb: 20, gift: 10
 };
 // Turu bitiren oyuncunun puanından düşülen miktar
 const WIN_BONUS = 20;
@@ -31,7 +36,9 @@ const WIN_BONUS = 20;
 // Renk seçimi gereken kartlar (tüm siyahlar)
 const NEEDS_COLOR = new Set(Object.keys(BLACK_COUNTS));
 // Hedef oyuncu seçimi gereken kartlar
-const NEEDS_TARGET = new Set(["wtarget2", "swap"]);
+const NEEDS_TARGET = new Set(["wtarget2", "swap", "eye", "gift"]);
+// Ceza gelince atılabilen savunma kartları
+const DEFENSE = new Set(["shield", "mirror"]);
 // Bu yığınlar varken hiçbir kart atılamaz, ceza çekilir
 const HARD_STACKS = new Set(["wild4", "custom", "wdraw2", "wtarget2"]);
 
@@ -56,6 +63,7 @@ function makeDeck() {
       deck.push({ color, type, value: type });
       deck.push({ color, type, value: type });
     }
+    for (const type of COLOR_SPECIALS) deck.push({ color, type, value: type });
   }
   for (const type of Object.keys(BLACK_COUNTS)) {
     for (let i = 0; i < BLACK_COUNTS[type]; i++) deck.push({ color: "black", type, value: type });
@@ -79,6 +87,11 @@ function cardLabel(c) {
     case "swap": return "El Değiş";
     case "shuffle": return "El Karıştır";
     case "skipall": return "Herkesi Atla";
+    case "shield": return col + " Kalkan";
+    case "eye": return col + " Göz";
+    case "gift": return col + " Hediye";
+    case "mirror": return "Ayna";
+    case "bomb": return "Bomba";
     default: return "?";
   }
 }
@@ -92,9 +105,9 @@ function cardPoints(c) {
 function canPlay(card, top, chosenColor, stackKind) {
   if (!card) return false;
   if (!top) return true;
-  if (stackKind === "draw2") return card.type === "draw2";
-  if (stackKind && HARD_STACKS.has(stackKind)) return false;
-  if (card.type === "wild4") return ["number", "wild", "wild4", "custom"].includes(top.type);
+  // Ceza varken: Kalkan ve Ayna her zaman, +2 yığınında ayrıca +2 atılır
+  if (stackKind) return DEFENSE.has(card.type) || (stackKind === "draw2" && card.type === "draw2");
+  if (card.type === "wild4") return ["number", "wild", "wild4", "custom", "mirror", "bomb"].includes(top.type);
   if (card.color === "black") return true;
   const color = top.color === "black" ? chosenColor : top.color;
   if (card.color === color) return true;
@@ -104,6 +117,6 @@ function canPlay(card, top, chosenColor, stackKind) {
 }
 
 module.exports = {
-  COLORS, COLOR_TR, BLACK_COUNTS, CARD_POINTS, NUMBER_POINTS, WIN_BONUS, NEEDS_COLOR, NEEDS_TARGET,
+  COLORS, COLOR_TR, BLACK_COUNTS, COLOR_SPECIALS, DEFENSE, CARD_POINTS, NUMBER_POINTS, WIN_BONUS, NEEDS_COLOR, NEEDS_TARGET,
   shuffle, makeDeck, cardLabel, cardPoints, canPlay
 };

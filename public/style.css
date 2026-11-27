@@ -399,3 +399,15 @@ select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 
 .tut-hl { animation: tuthl 1s ease-in-out infinite; position: relative; z-index: 20; }
 @keyframes tuthl { 0%,100% { box-shadow: 0 0 0 3px #F5C400, 0 0 14px 4px rgba(245,196,0,.65); } 50% { box-shadow: 0 0 0 5px #fff3a0, 0 0 22px 8px rgba(245,196,0,.9); } }
 .hand .ucard.tut-hl { transform: translateY(-10px); }
+
+/* ---------- Yeni kartlar (V96) ---------- */
+.newb { display: inline-block; background: #F5C400; color: #161B2E; font-size: .62rem; font-weight: 900; padding: 1px 6px; border-radius: 6px; vertical-align: 2px; margin-left: 4px; }
+.bomb-tag { display: inline-flex; align-items: center; gap: 3px; margin-top: 4px; padding: 2px 8px 2px 5px; border-radius: 10px; background: #3a1414; color: #ffb4a0; font-weight: 900; font-size: .9rem; animation: bombt 1s ease-in-out infinite; }
+.bomb-tag svg { width: 18px; height: 18px; }
+@keyframes bombt { 0%,100% { box-shadow: 0 0 0 1px #ff6b4a; } 50% { box-shadow: 0 0 0 3px #ff6b4a, 0 0 12px 2px rgba(255,107,74,.6); } }
+.ov-hand.gift .ovc.gsel { background: none; border: 0; padding: 0; position: relative; transition: transform .12s; }
+.ov-hand.gift .ovc.gsel.on { transform: translateY(-12px); z-index: 5; }
+.ov-hand.gift .ovc.gsel.on .ucard { box-shadow: 0 0 0 4px #F5C400, 0 8px 14px rgba(0,0,0,.5); }
+.overlay.peek .body { justify-content: center; }
+.peek-ic { width: 40px; height: 40px; display: inline-flex; color: #F5C400; } .peek-ic svg { width: 100%; height: 100%; }
+.peek-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0 12px; }
